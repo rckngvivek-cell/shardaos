@@ -1,29 +1,26 @@
-import { ZodError } from 'zod';
+import type { Request, Response, NextFunction } from 'express';
+import { AppError } from '../errors/app-error.js';
+import { errorResponse } from '../lib/api-response.js';
+import { logger } from '../lib/logger.js';
 
-import { fail } from '../lib/api-response';
-import { AppError } from '../lib/app-error';
+const log = logger('error-handler');
 
-export function notFoundHandler(req: any, res: any) {
-  fail(res, 404, 'NOT_FOUND', `Route ${req.path} not found`, req.requestId);
-}
-
-export function errorHandler(
-  err: unknown,
-  req: any,
-  res: any,
-  _next: any
-) {
+export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction): void {
   if (err instanceof AppError) {
-    fail(res, err.statusCode, err.code, err.message, req.requestId, err.details);
+    res.status(err.statusCode).json(
+      errorResponse(err.code, err.message)
+    );
     return;
   }
 
-  if (err instanceof ZodError) {
-    const fieldErrors = err.flatten().fieldErrors as Record<string, unknown>;
-    fail(res, 400, 'VALIDATION_ERROR', 'Validation failed', req.requestId, fieldErrors);
-    return;
-  }
+  log.error('Unhandled error', {
+    message: err.message,
+    stack: err.stack,
+    requestId: req.requestId,
+    path: req.path,
+  });
 
-  const message = err instanceof Error ? err.message : 'Unexpected server error';
-  fail(res, 500, 'INTERNAL_SERVER_ERROR', message, req.requestId);
+  res.status(500).json(
+    errorResponse('INTERNAL_ERROR', 'An unexpected error occurred')
+  );
 }

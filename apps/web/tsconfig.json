@@ -15,7 +15,7 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "types": ["node", "vitest"],
+    "types": ["node", "vitest", "vite/client"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "Bundler",

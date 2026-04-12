@@ -1,86 +1,60 @@
-import type { NextFunction, Request, RequestHandler, Response } from 'express';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import type { Request, Response, NextFunction } from 'express';
+import type { AuthUser } from '@school-erp/shared';
+import { env } from '../config/env.js';
+import { getFirebaseAuth } from '../lib/firebase.js';
+import { AppError } from '../errors/app-error.js';
+import { logger } from '../lib/logger.js';
 
-import { env, type AuthMode } from '../config/env';
-import { AppError } from '../lib/app-error';
-import { fail } from '../lib/api-response';
-import { getFirebaseAuth } from '../lib/firebase';
+const log = logger('auth');
 
-const PUBLIC_PATHS = new Set(['/api/v1/health']);
-
-type FirebaseDecodedToken = DecodedIdToken & {
-  role?: unknown;
-};
-
-type FirebaseTokenVerifier = (token: string) => Promise<FirebaseDecodedToken>;
-
-function readBearerToken(req: Request) {
-  const header = req.header('authorization');
-  if (!header?.startsWith('Bearer ')) {
-    return null;
+declare global {
+  namespace Express {
+    interface Request {
+      user?: AuthUser;
+      requestId?: string;
+    }
   }
-
-  const token = header.slice('Bearer '.length).trim();
-  return token || null;
 }
 
-function readMockUser(req: Request, token: string) {
-  return {
-    uid: token,
-    email: req.header('x-user-email') ?? 'demo-admin@schoolerp.local',
-    role: req.header('x-user-role') ?? 'school_admin'
-  };
-}
-
-function buildAuthModeHandler(
-  authMode: AuthMode,
-  verifyIdToken: FirebaseTokenVerifier
-): RequestHandler {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    if (PUBLIC_PATHS.has(req.path)) {
-      next();
-      return;
-    }
-
-    const token = readBearerToken(req);
-    if (!token) {
-      fail(res, 401, 'UNAUTHORIZED', 'Missing bearer token', req.requestId);
-      return;
-    }
-
-    if (authMode === 'mock') {
-      req.user = readMockUser(req, token);
-      next();
-      return;
-    }
-
-    try {
-      const decoded = await verifyIdToken(token);
+export async function authMiddleware(req: Request, _res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (env.AUTH_MODE === 'dev') {
       req.user = {
-        uid: decoded.uid,
-        email: decoded.email,
-        role: String(decoded.role ?? 'school_admin')
+        uid: 'dev-user-001',
+        email: 'admin@dev.school',
+        role: 'school_admin',
+        schoolId: 'dev-school-001',
       };
-      next();
-    } catch (error) {
-      if (error instanceof AppError) {
-        next(error);
-        return;
-      }
-
-      fail(res, 401, 'UNAUTHORIZED', 'Invalid or expired token', req.requestId);
+      return next();
     }
-  };
-}
 
-export function createAuthMiddleware(options: {
-  authMode?: AuthMode;
-  verifyIdToken?: FirebaseTokenVerifier;
-} = {}): RequestHandler {
-  return buildAuthModeHandler(
-    options.authMode ?? env.AUTH_MODE,
-    options.verifyIdToken ?? ((token) => getFirebaseAuth().verifyIdToken(token) as Promise<FirebaseDecodedToken>)
-  );
-}
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new AppError(401, 'UNAUTHORIZED', 'Missing or invalid Authorization header');
+    }
 
-export const authMiddleware = createAuthMiddleware();
+    const token = authHeader.slice(7);
+    const auth = getFirebaseAuth();
+    const decoded = await auth.verifyIdToken(token);
+
+    const schoolId = decoded.schoolId ?? decoded.school_id ?? req.headers['x-school-id'];
+    if (!schoolId || typeof schoolId !== 'string') {
+      throw new AppError(403, 'SCHOOL_SCOPE_MISSING', 'Token must include schoolId claim');
+    }
+
+    req.user = {
+      uid: decoded.uid,
+      email: decoded.email,
+      role: decoded.role ?? 'student',
+      schoolId,
+    };
+
+    next();
+  } catch (error) {
+    if (error instanceof AppError) {
+      return next(error);
+    }
+    log.error('Auth verification failed', { error: String(error) });
+    next(new AppError(401, 'UNAUTHORIZED', 'Invalid or expired token'));
+  }
+}

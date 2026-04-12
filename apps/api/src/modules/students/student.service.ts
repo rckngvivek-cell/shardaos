@@ -1,51 +1,46 @@
-import { nanoid } from 'nanoid';
-
+import type { Student, CreateStudentInput, UpdateStudentInput } from '@school-erp/shared';
+import { StudentRepository } from './student.repository.js';
 import { AppError } from '../../errors/app-error.js';
-import type { AuthUser } from '../auth/auth.types.js';
-import { createStudentSchema } from './student.schema.js';
-import type { CreateStudentInput } from './student.types.js';
-import { createStudentsRepository } from '../../repositories/student-repository.js';
 
-const studentsRepository = createStudentsRepository();
+interface ListOptions {
+  page: number;
+  limit: number;
+  grade?: string;
+  section?: string;
+}
 
-export class StudentsService {
-  async listStudents(schoolId: string) {
-    return studentsRepository.listBySchool(schoolId);
+export class StudentService {
+  private repo = new StudentRepository();
+
+  async list(schoolId: string, opts: ListOptions): Promise<{ students: Student[]; total: number }> {
+    return this.repo.findAll(schoolId, opts);
   }
 
-  async getStudent(schoolId: string, studentId: string) {
-    const student = await studentsRepository.getById(schoolId, studentId);
-
+  async getById(schoolId: string, id: string): Promise<Student> {
+    const student = await this.repo.findById(schoolId, id);
     if (!student) {
-      throw new AppError(404, 'STUDENT_NOT_FOUND', 'Student not found');
+      throw new AppError(404, 'NOT_FOUND', `Student ${id} not found`);
     }
-
     return student;
   }
 
-  async createStudent(
-    schoolId: string,
-    actor: AuthUser,
-    payload: CreateStudentInput,
-  ) {
-    const parsed = createStudentSchema.safeParse(payload);
+  async create(schoolId: string, input: CreateStudentInput): Promise<Student> {
+    return this.repo.create(schoolId, input);
+  }
 
-    if (!parsed.success) {
-      throw new AppError(400, 'VALIDATION_ERROR', 'Validation failed', {
-        issues: parsed.error.flatten(),
-      });
+  async update(schoolId: string, id: string, input: UpdateStudentInput): Promise<Student> {
+    const existing = await this.repo.findById(schoolId, id);
+    if (!existing) {
+      throw new AppError(404, 'NOT_FOUND', `Student ${id} not found`);
     }
+    return this.repo.update(schoolId, id, input);
+  }
 
-    const now = new Date().toISOString();
-    const student = {
-      ...parsed.data,
-      studentId: `std_${nanoid(10)}`,
-      schoolId,
-      createdBy: actor.uid,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    return studentsRepository.create(student);
+  async delete(schoolId: string, id: string): Promise<void> {
+    const existing = await this.repo.findById(schoolId, id);
+    if (!existing) {
+      throw new AppError(404, 'NOT_FOUND', `Student ${id} not found`);
+    }
+    await this.repo.delete(schoolId, id);
   }
 }

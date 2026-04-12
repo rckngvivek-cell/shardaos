@@ -1,60 +1,25 @@
-import { applicationDefault, cert, getApps, initializeApp } from 'firebase-admin/app';
+import { initializeApp, cert, getApps, type App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { env } from '../config/env.js';
 
-import { env } from '../config/env';
-import { AppError } from './app-error';
+let app: App;
 
-function normalizePrivateKey(privateKey?: string) {
-  return privateKey?.replace(/\\n/g, '\n');
-}
-
-export function requireFirebaseProjectId() {
-  if (!env.FIREBASE_PROJECT_ID) {
-    throw new AppError(
-      500,
-      'FIREBASE_CONFIG_MISSING',
-      'FIREBASE_PROJECT_ID must be set when Firebase auth or storage is enabled'
-    );
+function getFirebaseApp(): App {
+  if (getApps().length > 0) {
+    return getApps()[0];
   }
 
-  return env.FIREBASE_PROJECT_ID;
-}
-
-function hasEmulatorHost() {
-  return Boolean(process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_AUTH_EMULATOR_HOST);
-}
-
-function createApp() {
-  const existing = getApps()[0];
-  if (existing) {
-    return existing;
-  }
-
-  const projectId = requireFirebaseProjectId();
-
-  if (hasEmulatorHost()) {
-    return initializeApp({
-      projectId
+  if (env.GOOGLE_APPLICATION_CREDENTIALS) {
+    app = initializeApp({
+      credential: cert(env.GOOGLE_APPLICATION_CREDENTIALS),
+      projectId: env.FIREBASE_PROJECT_ID,
     });
+  } else {
+    app = initializeApp({ projectId: env.FIREBASE_PROJECT_ID });
   }
 
-  const hasInlineCredentials = Boolean(env.FIREBASE_CLIENT_EMAIL && env.FIREBASE_PRIVATE_KEY);
-
-  return initializeApp({
-    projectId,
-    credential: hasInlineCredentials
-      ? cert({
-          projectId,
-          clientEmail: env.FIREBASE_CLIENT_EMAIL,
-          privateKey: normalizePrivateKey(env.FIREBASE_PRIVATE_KEY)
-        })
-      : applicationDefault()
-  });
-}
-
-export function getFirebaseApp() {
-  return createApp();
+  return app;
 }
 
 export function getFirebaseAuth() {
@@ -63,8 +28,4 @@ export function getFirebaseAuth() {
 
 export function getFirestoreDb() {
   return getFirestore(getFirebaseApp());
-}
-
-export function getDb() {
-  return getFirestoreDb();
 }

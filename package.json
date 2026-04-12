@@ -11,11 +11,10 @@
     "dev": "npm run build --workspace @school-erp/shared && concurrently -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
     "dev:api": "npm run build --workspace @school-erp/shared && npm run dev --workspace @school-erp/api",
     "dev:web": "npm run build --workspace @school-erp/shared && npm run dev --workspace @school-erp/web",
-    "dev:founder": "npm run dev --workspace @school-erp/founder",
-    "build": "npm run build --workspace @school-erp/shared && npm run build --workspace @school-erp/api && npm run build --workspace @school-erp/web && npm run build --workspace @school-erp/founder",
+    "build": "npm run build --workspace @school-erp/shared && npm run build --workspace @school-erp/api && npm run build --workspace @school-erp/web",
     "test": "npm run build --workspace @school-erp/shared && npm run test --workspace @school-erp/api",
-    "lint": "npm run typecheck --workspace @school-erp/shared && npm run typecheck --workspace @school-erp/api && npm run lint --workspace @school-erp/web && npm run typecheck --workspace @school-erp/founder",
-    "typecheck": "npm run typecheck --workspace @school-erp/shared && npm run typecheck --workspace @school-erp/api && npm run typecheck --workspace @school-erp/web && npm run typecheck --workspace @school-erp/founder"
+    "lint": "npm run typecheck --workspace @school-erp/shared && npm run typecheck --workspace @school-erp/api && npm run lint --workspace @school-erp/web",
+    "typecheck": "npm run typecheck --workspace @school-erp/shared && npm run typecheck --workspace @school-erp/api && npm run typecheck --workspace @school-erp/web"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

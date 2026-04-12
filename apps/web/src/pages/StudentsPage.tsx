@@ -1,75 +1,45 @@
-import { useAppSelector } from '@/app/hooks';
-import { useDeferredValue, useState } from 'react';
-
-import { StudentForm } from '../components/StudentForm';
-import { useCreateStudentMutation, useListStudentsQuery } from '../services/schoolErpApi';
+import { useState } from 'react';
+import type { Student } from '@school-erp/shared';
+import { useListStudentsQuery, useDeleteStudentMutation } from '../features/students/studentsApi';
+import { DataTable } from '../components/shared/DataTable';
 
 export function StudentsPage() {
-  const schoolId = useAppSelector((state) => state.session.schoolId);
-  const [query, setQuery] = useState('');
-  const deferredQuery = useDeferredValue(query);
-  const [createStudent, { isLoading: isSaving }] = useCreateStudentMutation();
-  const { data: students = [], isFetching } = useListStudentsQuery({
-    schoolId,
-    q: deferredQuery || undefined
-  });
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useListStudentsQuery({ page, limit: 20 });
+  const [deleteStudent] = useDeleteStudentMutation();
+
+  const columns = [
+    { header: 'Name', accessor: (r: Student) => `${r.firstName} ${r.lastName}` },
+    { header: 'Grade', accessor: 'grade' as const },
+    { header: 'Section', accessor: 'section' as const },
+    { header: 'Roll No', accessor: 'rollNumber' as const },
+  ];
 
   return (
-    <div className="page two-column">
-      <StudentForm
-        pending={isSaving}
-        onSubmit={async (values) => {
-          await createStudent({
-            schoolId,
-            payload: {
-              firstName: values.firstName,
-              lastName: values.lastName,
-              dob: values.dob,
-              rollNumber: values.rollNumber,
-              class: 5,
-              section: 'A',
-              contact: {
-                parentName: values.parentName,
-                parentEmail: values.parentEmail || undefined,
-                parentPhone: values.parentPhone
-              }
-            }
-          }).unwrap();
-        }}
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Students</h1>
+        <button className="px-4 py-2 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors">
+          + Add Student
+        </button>
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={data?.data ?? []}
+        isLoading={isLoading}
+        onDelete={(row) => deleteStudent((row as { id: string }).id)}
       />
 
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <p className="eyebrow">Student Registry</p>
-            <h2>Class 5-A</h2>
+      {data?.meta && (
+        <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+          <span>Showing page {data.meta.page} of {Math.ceil(data.meta.total / data.meta.limit)}</span>
+          <div className="space-x-2">
+            <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="px-3 py-1 border rounded disabled:opacity-50">Prev</button>
+            <button disabled={data.data.length < data.meta.limit} onClick={() => setPage(page + 1)} className="px-3 py-1 border rounded disabled:opacity-50">Next</button>
           </div>
-          <span className="status-pill">{isFetching ? 'Refreshing' : `${students.length} records`}</span>
         </div>
-        <label className="search-field">
-          Search by name, roll number, or Aadhaar
-          <input value={query} onChange={(event) => setQuery(event.target.value)} />
-        </label>
-        <div className="student-list">
-          {students.map((student) => (
-            <article className="student-card" key={student.studentId}>
-              <div>
-                <strong>
-                  {student.firstName} {student.lastName}
-                </strong>
-                <p>
-                  Roll {student.rollNumber} • Class {student.class}-{student.section}
-                </p>
-              </div>
-              <div className="student-meta">
-                <span>{student.contact.parentName}</span>
-                <span>{student.contact.parentPhone}</span>
-              </div>
-            </article>
-          ))}
-          {!students.length && <p className="empty-state">No students match the current filter.</p>}
-        </div>
-      </section>
+      )}
     </div>
   );
 }
