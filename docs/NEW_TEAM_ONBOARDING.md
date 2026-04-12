@@ -102,7 +102,7 @@ nano .env.local  # or vim, or open in editor
 # Required values to set:
 #  - FIREBASE_PROJECT_ID (get from team lead)
 #  - FIREBASE_PRIVATE_KEY (request from secret manager)
-#  - DATABASE_URL (Firestore emulator default: http://localhost:8080)
+#  - DATABASE_URL (Firestore emulator default: http://localhost:8081)
 #  - GOOGLE_APPLICATION_CREDENTIALS (download service account key)
 
 # Verify file created
@@ -132,18 +132,14 @@ gcloud secrets versions access latest --secret="firebase-config" > firebase-conf
 npm run dev
 
 # This starts:
-# 1. Firestore emulator (port 8080)
-# 2. API server (port 3001)
-# 3. Frontend dev server (port 3000)
-# 4. Cloud Functions emulator (port 5001)
+# 1. API server (port 3000)
+# 2. Frontend dev server (port 5173)
 
 # Expected output:
-# ℹ Firestore emulator listening on 127.0.0.1:8080
-# ✓ API server ready at http://localhost:3001
-# ✓ Frontend ready at http://localhost:3000
-# ✓ Functions emulator ready
+# ✓ API server ready at http://localhost:3000
+# ✓ Frontend ready at http://localhost:5173
 
-# Open http://localhost:3000 in browser
+# Open http://localhost:5173 in browser
 ```
 
 ### Manual Service Setup (if above doesn't work)
@@ -154,11 +150,11 @@ npm run dev
 # Navigate to workspace
 cd ~/workspace/school-erp
 
-# Start Firestore emulator (required for API testing)
-npm run emulator:firestore
+# Start Firestore + Auth emulators when you need Firebase integration testing
+npx firebase emulators:start --only auth,firestore --project school-erp-dev
 
 # Expected output:
-# API listening on localhost:8080
+# Firestore listening on localhost:8081
 # Firestore UI available at http://localhost:4000
 ```
 
@@ -171,14 +167,15 @@ cd ~/workspace/school-erp/apps/api
 npm install
 
 # Set environment
-export FIRESTORE_EMULATOR_HOST=localhost:8080
+export FIRESTORE_EMULATOR_HOST=localhost:8081
 export NODE_ENV=development
+export PORT=3000
 
 # Start API server
 npm run dev
 
 # Expected output:
-# ✓ Server running on port 3001
+# ✓ Server running on port 3000
 # ✓ Connected to Firestore emulator
 ```
 
@@ -194,7 +191,7 @@ npm install
 npm run dev
 
 # Expected output:
-# Local: http://localhost:3000
+# Local: http://localhost:5173
 # Press 'h' for help, 'q' to quit
 ```
 
@@ -202,11 +199,11 @@ npm run dev
 
 ```bash
 # In a 4th terminal, run smoke tests:
-curl http://localhost:3001/health
+curl http://localhost:3000/api/health
 
 # Expected: {"status":"ok"}
 
-curl http://localhost:3000
+curl http://localhost:5173
 
 # Expected: HTML response (homepage)
 ```
@@ -378,34 +375,37 @@ Step-by-step testing instructions
 ### Staging Deployment
 
 ```bash
-# After PR approval, request staging deploy:
-# Command in GitHub PR comment: /deploy staging
+# Current supported deployment path:
+gcloud builds submit \
+  --config cloudbuild.yaml \
+  --substitutions=_SERVICE_NAME=school-erp-api,_REGION=asia-south1 \
+  .
 
-# This triggers:
-# 1. Cloud Build compiles code
-# 2. Tests run in isolated environment
-# 3. Deploys to staging Cloud Run service
-# 4. Smoke tests verify deployment
-# 5. Posts result in PR
+# This path:
+# 1. Builds the API image from apps/api/Dockerfile
+# 2. Pushes the tagged image to gcr.io/$PROJECT_ID/school-erp-api
+# 3. Deploys school-erp-api to Cloud Run
 
-# Monitor deployment: Cloud Build console (link in PR)
+# Monitor deployment:
+gcloud builds list --limit 10
+gcloud builds log <BUILD_ID> --stream
 ```
 
 ### Production Deployment
 
 ```bash
-# After staging verification, request production deploy:
-# Command in GitHub PR comment: /deploy production
+# Manual operator-driven fallback:
+PROJECT_ID=your-gcp-project-id \
+REGION=asia-south1 \
+IMAGE_TAG=latest \
+sh infrastructure/cloud-run/deploy-autoscaling.sh
 
-# Deployment process (see DEPLOYMENT_RUNBOOK.md):
-# 1. Blue-green deployment with 10% canary
-# 2. Monitor error rates for 5 minutes
-# 3. Gradually scale to 100%
-# 4. Final verification
-
-# After deployment, verify in monitoring dashboard:
-# https://console.cloud.google.com/monitoring/dashboards/custom/school-erp-api-health
+# Verify the deployed service:
+gcloud run services describe school-erp-api --region=asia-south1
+curl https://YOUR_CLOUD_RUN_URL/api/health
 ```
+
+The legacy GitHub staging and production deploy workflows are draft placeholders right now. Do not treat them as the supported production path until they are rebuilt around the `school-erp-api` Cloud Build baseline.
 
 ---
 
@@ -429,20 +429,20 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
-### Error: "EADDRINUSE: address already in use :::3001"
+### Error: "EADDRINUSE: address already in use :::3000"
 
-**Cause:** Port 3001 already in use (another instance running)  
+**Cause:** Port 3000 already in use (another instance running)  
 **Fix:**
 
 ```bash
-# Find process using port 3001
-lsof -i :3001
+# Find process using port 3000
+lsof -i :3000
 
 # Kill the process
 kill -9 <PID>
 
 # Or specify different port
-PORT=3002 npm run dev
+PORT=3001 npm run dev
 ```
 
 ### Error: "Firestore emulator not connected"
@@ -452,13 +452,13 @@ PORT=3002 npm run dev
 
 ```bash
 # Ensure emulator running in separate terminal
-npm run emulator:firestore
+npx firebase emulators:start --only auth,firestore --project school-erp-dev
 
 # Set environment variable
-export FIRESTORE_EMULATOR_HOST=localhost:8080
+export FIRESTORE_EMULATOR_HOST=localhost:8081
 
 # Verify it's set
-echo $FIRESTORE_EMULATOR_HOST  # Should print: localhost:8080
+echo $FIRESTORE_EMULATOR_HOST  # Should print: localhost:8081
 
 # Restart API server
 npm run dev
@@ -512,7 +512,7 @@ global.window = dom.window;
 firebase auth:export users.json
 
 # Use in header:
-curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:3001/api/v1/students
+curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:3000/api/students
 
 # For testing, bypass auth in development:
 # Edit apps/api/src/middleware/auth.ts:
@@ -687,11 +687,11 @@ npm run typecheck          # TypeScript check
 npm run build              # Production build
 
 # Deployment
-npm run deploy:staging     # Deploy to staging
-npm run deploy:production  # Deploy to production
+gcloud builds submit --config cloudbuild.yaml --substitutions=_SERVICE_NAME=school-erp-api,_REGION=asia-south1 .  # Supported deploy path
+PROJECT_ID=your-gcp-project-id REGION=asia-south1 IMAGE_TAG=latest sh infrastructure/cloud-run/deploy-autoscaling.sh # Manual fallback
 
 # Database
-npm run emulator:firestore # Start Firestore emulator
+npx firebase emulators:start --only auth,firestore --project school-erp-dev # Start Firestore emulator
 npm run db:seed            # Seed test data
 npm run db:backup          # Backup Firestore
 
@@ -711,7 +711,7 @@ npm run docs:generate      # Generate API docs
 | `jest.config.js` | Test runner configuration |
 | `.eslintrc.json` | Linting rules |
 | `cloudbuild.yaml` | CI/CD pipeline definition |
-| `Dockerfile` | Container image definition |
+| `apps/api/Dockerfile` | Production API container image definition |
 
 ---
 
@@ -743,7 +743,11 @@ school-erp/                    (Monorepo root)
 │   └── NEW_TEAM_ONBOARDING.md
 │
 ├── .github/workflows/         (CI/CD pipelines)
-├── Dockerfile                 (Container image)
+├── cloudbuild.yaml            (Current supported API deployment path)
+├── infrastructure/
+│   └── cloud-run/
+│       ├── service.yaml       (Reference Cloud Run manifest)
+│       └── deploy-autoscaling.sh (Manual deploy fallback)
 ├── docker-compose.yml         (Local services)
 ├── jest.config.js            (Test config)
 ├── .env.example              (Environment template)

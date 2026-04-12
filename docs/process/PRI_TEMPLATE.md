@@ -14,6 +14,9 @@
 
 ## Subtasks
 
+- [ ] Plan
+- [ ] Review
+- [ ] Replan if scope changes
 - [ ] Subtask 1
 - [ ] Subtask 2
 - [ ] Validation or tests

@@ -142,12 +142,12 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Build Docker image
-        run: docker build -t deerflow-backend:scan .
+        run: docker build -t school-erp-api:scan -f apps/api/Dockerfile .
       
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'deerflow-backend:scan'
+          image-ref: 'school-erp-api:scan'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'

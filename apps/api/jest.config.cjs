@@ -14,7 +14,11 @@ module.exports = {
     }
   },
   transform: {
-    '^.+\\.ts$': ['ts-jest', { diagnostics: false, isolatedModules: true }]
+    '^.+\\.ts$': ['ts-jest', { diagnostics: false }]
+  },
+  moduleNameMapper: {
+    // TypeScript sources use runtime `.js` specifiers; Jest must map them back to source modules.
+    '^(\\.{1,2}/.*)\\.js$': '$1'
   },
   testTimeout: 30000,
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts']

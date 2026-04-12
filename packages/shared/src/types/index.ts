@@ -1,4 +1,6 @@
 export * from './user.js';
+export * from './platform.js';
+export * from './api.js';
 export * from './school.js';
 export * from './student.js';
 export * from './attendance.js';

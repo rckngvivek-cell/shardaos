@@ -15,7 +15,7 @@
   ],
   "routes": [
     {
-      "src": "/api/v1/(.*)",
+      "src": "/api/(.*)",
       "dest": "apps/api/dist/index.js"
     },
     {
@@ -26,12 +26,11 @@
   "env": {
     "NODE_ENV": "production",
     "PORT": "3000",
-    "STORAGE_DRIVER": "firestore",
     "AUTH_MODE": "firebase"
   },
   "headers": [
     {
-      "source": "/api/v1/(.*)",
+      "source": "/api/(.*)",
       "headers": [
         {
           "key": "Cache-Control",

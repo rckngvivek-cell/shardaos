@@ -17,10 +17,13 @@ Use that as the entry condition for any new slice.
 
 1. Write a short plan before coding.
 2. Review the plan for scope, dependencies, edge cases, and tests.
-3. Implement only what was approved.
-4. Add or update tests with the change.
-5. Keep changes small enough to review in one pass.
-6. Rerun the root validation commands after each completed slice.
+3. Every working to-do list must explicitly include `Plan`, `Review`, and `Replan if scope changes`.
+4. Implement only what was approved.
+5. Write production-grade code only. Do not leave placeholder behavior, fake success paths, or undocumented temporary logic in active code paths.
+6. Comments must explain intent, invariants, or business purpose, not obvious syntax.
+7. Add or update tests with the change.
+8. Keep changes small enough to review in one pass.
+9. Rerun the root validation commands after each completed slice.
 
 ## Branch and PR Discipline
 

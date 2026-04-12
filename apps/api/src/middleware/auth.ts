@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { AuthUser } from '@school-erp/shared';
+import type { TenantAuthUser } from '@school-erp/shared';
+import { isTenantRole } from '@school-erp/shared';
 import { env } from '../config/env.js';
 import { getFirebaseAuth } from '../lib/firebase.js';
 import { AppError } from '../errors/app-error.js';
@@ -10,7 +11,7 @@ const log = logger('auth');
 declare global {
   namespace Express {
     interface Request {
-      user?: AuthUser;
+      user?: TenantAuthUser;
       requestId?: string;
     }
   }
@@ -24,6 +25,7 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
         email: 'admin@dev.school',
         role: 'school_admin',
         schoolId: 'dev-school-001',
+        plane: 'tenant',
       };
       return next();
     }
@@ -42,11 +44,15 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
       throw new AppError(403, 'SCHOOL_SCOPE_MISSING', 'Token must include schoolId claim');
     }
 
+    const claimRole = typeof decoded.role === 'string' ? decoded.role : undefined;
+    const role = claimRole && isTenantRole(claimRole) ? claimRole : 'student';
+
     req.user = {
       uid: decoded.uid,
       email: decoded.email,
-      role: decoded.role ?? 'student',
+      role,
       schoolId,
+      plane: 'tenant',
     };
 
     next();

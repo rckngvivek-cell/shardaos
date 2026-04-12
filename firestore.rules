@@ -2,224 +2,63 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // ==== UTILITY FUNCTIONS ====
-    
-    // Check if request is authenticated
+    /**
+     * Firestore security rules apply ONLY to Firebase client SDK access.
+     * The School ERP API uses the Firebase Admin SDK and is not subject to these rules.
+     *
+     * Current baseline:
+     * - Tenant data is stored under `/schools/{schoolId}/...`.
+     * - Clients are expected to read/write via the API, not directly via Firestore.
+     *
+     * These rules are intentionally conservative: tenant-scoped READS only and no client WRITES.
+     * If direct client access is introduced, relax these rules in a dedicated slice with tests.
+     */
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    // Get current user doc from users collection
-    function getUserDoc() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+
+    function tokenSchoolId() {
+      // Support both camelCase and snake_case claims.
+      return request.auth == null
+        ? null
+        : (request.auth.token.schoolId != null ? request.auth.token.schoolId : request.auth.token.school_id);
     }
-    
-    // Check if user has specific role
-    function hasRole(role) {
-      return getUserDoc().role == role;
+
+    function isTenant() {
+      return isAuthenticated() && tokenSchoolId() is string && tokenSchoolId().size() > 0;
     }
-    
-    // Check if user is admin
-    function isAdmin() {
-      return hasRole('admin');
+
+    function isTenantOf(schoolId) {
+      return isTenant() && tokenSchoolId() == schoolId;
     }
-    
-    // Check if user is teacher
-    function isTeacher() {
-      return hasRole('teacher');
-    }
-    
-    // Check if user is student
-    function isStudent() {
-      return hasRole('student');
-    }
-    
-    // Check if user is parent
-    function isParent() {
-      return hasRole('parent');
-    }
-    
-    // Check if user belongs to school
-    function belongsToSchool(schoolId) {
-      return getUserDoc().schoolId == schoolId;
-    }
-    
-    // Check if this is the same user
-    function isUser(userId) {
-      return request.auth.uid == userId;
-    }
-    
-    // Check if parent owns child
-    function parentOwnsChild(childId) {
-      return childId in getUserDoc().childrenIds;
-    }
-    
-    // ==== SCHOOLS COLLECTION ====
-    
+
+    // ── Tenant plane: read-only within the caller's school ──
     match /schools/{schoolId} {
-      // Authenticated users can read schools they belong to, or admins can read all
-      allow read: if isAuthenticated() && (
-        isAdmin() || belongsToSchool(schoolId)
-      );
-      
-      // Only admins can create schools
-      allow create: if isAuthenticated() && isAdmin();
-      
-      // Only admins can update schools
-      allow update: if isAuthenticated() && isAdmin();
-      
-      // Only admins can delete schools
-      allow delete: if isAuthenticated() && isAdmin();
+      allow get, list: if isTenantOf(schoolId);
+      allow create, update, delete: if false;
+
+      // Any subcollections under the school doc remain read-only for now.
+      match /{document=**} {
+        allow get, list: if isTenantOf(schoolId);
+        allow create, update, delete: if false;
+      }
     }
-    
-    // ==== STUDENTS COLLECTION ====
-    
-    match /students/{studentId} {
-      // Admin: can read all
-      // Teacher: can read students from their school
-      // Student: can only read themselves
-      // Parent: can read their child
-      allow read: if isAuthenticated() && (
-        isAdmin() ||
-        (isTeacher() && belongsToSchool(resource.data.schoolId)) ||
-        (isStudent() && isUser(studentId)) ||
-        (isParent() && parentOwnsChild(studentId))
-      );
-      
-      // Only admins can create students
-      allow create: if isAuthenticated() && isAdmin();
-      
-      // Only admins can update students
-      allow update: if isAuthenticated() && isAdmin();
-      
-      // Only admins can delete students
-      allow delete: if isAuthenticated() && isAdmin();
+
+    // ── Platform plane: no direct client access in the current baseline ──
+    match /platform_employees/{docId} {
+      allow read, write: if false;
     }
-    
-    // ==== TEACHERS COLLECTION ====
-    
-    match /teachers/{teacherId} {
-      // Admin: can read all
-      // Teachers: can only read themselves
-      // Others: cannot read
-      allow read: if isAuthenticated() && (
-        isAdmin() ||
-        (isTeacher() && isUser(teacherId))
-      );
-      
-      // Only admins can create teachers
-      allow create: if isAuthenticated() && isAdmin();
-      
-      // Admins can update all, teachers can update themselves
-      allow update: if isAuthenticated() && (
-        isAdmin() ||
-        (isTeacher() && isUser(teacherId))
-      );
-      
-      // Only admins can delete teachers
-      allow delete: if isAuthenticated() && isAdmin();
+
+    match /platform_approvals/{docId} {
+      allow read, write: if false;
     }
-    
-    // ==== ATTENDANCE COLLECTION ====
-    
-    match /attendance/{attendanceId} {
-      // Admin: can read all
-      // Teacher: can read/write for their school
-      // Student: can read own attendance
-      // Parent: can read child's attendance
-      allow read: if isAuthenticated() && (
-        isAdmin() ||
-        (isTeacher() && belongsToSchool(resource.data.schoolId)) ||
-        (isStudent() && resource.data.studentId == request.auth.uid) ||
-        (isParent() && parentOwnsChild(resource.data.studentId))
-      );
-      
-      // Only admin and teacher (for own school) can create attendance
-      allow create: if isAuthenticated() && (
-        isAdmin() || 
-        (isTeacher() && belongsToSchool(request.resource.data.schoolId))
-      );
-      
-      // Only admin and teacher (for own school) can update/delete
-      allow update, delete: if isAuthenticated() && (
-        isAdmin() || 
-        (isTeacher() && belongsToSchool(resource.data.schoolId))
-      );
+
+    match /platform_audit_log/{docId} {
+      allow read, write: if false;
     }
-    
-    // ==== GRADES COLLECTION ====
-    
-    match /grades/{gradeId} {
-      // Admin: can read all
-      // Teacher: can read grades for their school
-      // Student: can read own grades
-      // Parent: can read child's grades
-      allow read: if isAuthenticated() && (
-        isAdmin() ||
-        (isTeacher() && belongsToSchool(resource.data.schoolId)) ||
-        (isStudent() && resource.data.studentId == request.auth.uid) ||
-        (isParent() && parentOwnsChild(resource.data.studentId))
-      );
-      
-      // Only admin and teacher (for own school) can create grades
-      allow create: if isAuthenticated() && (
-        isAdmin() || 
-        (isTeacher() && belongsToSchool(request.resource.data.schoolId))
-      );
-      
-      // Only admin and teacher (for own school) can update grades
-      allow update: if isAuthenticated() && (
-        isAdmin() || 
-        (isTeacher() && belongsToSchool(resource.data.schoolId))
-      );
-      
-      // Only admin can delete grades
-      allow delete: if isAuthenticated() && isAdmin();
-    }
-    
-    // ==== ANNOUNCEMENTS COLLECTION ====
-    
-    match /announcements/{announcementId} {
-      // All authenticated users can read announcements for their school
-      // Admins can read all announcements
-      allow read: if isAuthenticated() && (
-        isAdmin() ||
-        (resource.data.schoolId == null) || // Global announcements
-        belongsToSchool(resource.data.schoolId)
-      );
-      
-      // Only admins and teachers can create announcements
-      allow create: if isAuthenticated() && (
-        isAdmin() || isTeacher()
-      );
-      
-      // Only admins can update/delete
-      allow update, delete: if isAuthenticated() && isAdmin();
-    }
-    
-    // ==== USERS COLLECTION (Sensitive) ====
-    
-    match /users/{userId} {
-      // Users can only read own data, or admin can read all
-      allow read: if isAuthenticated() && (
-        isUser(userId) || 
-        isAdmin()
-      );
-      
-      // Users can only update own data, or admin can update
-      allow update: if isAuthenticated() && (
-        isUser(userId) || 
-        isAdmin()
-      );
-      
-      // Only admin can create/delete users
-      allow create: if isAuthenticated() && isAdmin();
-      allow delete: if isAuthenticated() && isAdmin();
-    }
-    
-    // ==== DEFAULT DENY ====
-    
+
+    // ── Default deny ──
     match /{document=**} {
       allow read, write: if false;
     }

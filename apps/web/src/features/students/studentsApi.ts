@@ -1,32 +1,33 @@
 import { api } from '../../store/api';
-import type { Student } from '@school-erp/shared';
-
-interface PaginatedResponse<T> {
-  success: boolean;
-  data: T[];
-  meta: { total: number; page: number; limit: number };
-}
+import type { CreateStudentInput, Student, UpdateStudentInput } from '@school-erp/shared';
+import type { ApiSuccessResponse, PaginatedApiResponse } from '../../store/apiTypes';
 
 export const studentsApi = api.injectEndpoints({
   endpoints: (build) => ({
-    listStudents: build.query<PaginatedResponse<Student>, { page?: number; limit?: number; grade?: string }>({
+    listStudents: build.query<PaginatedApiResponse<Student>, { page?: number; limit?: number; grade?: string; section?: string }>({
       query: (params) => ({ url: '/students', params }),
       providesTags: ['Student'],
     }),
-    getStudent: build.query<{ success: boolean; data: Student }, string>({
+    getStudent: build.query<ApiSuccessResponse<Student>, string>({
       query: (id) => `/students/${id}`,
       providesTags: (_r, _e, id) => [{ type: 'Student', id }],
     }),
-    createStudent: build.mutation<{ success: boolean; data: Student }, Partial<Student>>({
+    createStudent: build.mutation<ApiSuccessResponse<Student>, CreateStudentInput>({
       query: (body) => ({ url: '/students', method: 'POST', body }),
       invalidatesTags: ['Student'],
     }),
-    updateStudent: build.mutation<{ success: boolean; data: Student }, { id: string; body: Partial<Student> }>({
+    updateStudent: build.mutation<ApiSuccessResponse<Student>, { id: string; body: UpdateStudentInput }>({
       query: ({ id, body }) => ({ url: `/students/${id}`, method: 'PUT', body }),
       invalidatesTags: (_r, _e, { id }) => [{ type: 'Student', id }],
     }),
     deleteStudent: build.mutation<void, string>({
-      query: (id) => ({ url: `/students/${id}`, method: 'DELETE' }),
+      query: (id) => ({
+        url: `/students/${id}`,
+        method: 'DELETE',
+        // The API returns 204 No Content; avoid JSON parsing errors in fetchBaseQuery.
+        responseHandler: (response) => response.text(),
+      }),
+      transformResponse: () => undefined,
       invalidatesTags: ['Student'],
     }),
   }),

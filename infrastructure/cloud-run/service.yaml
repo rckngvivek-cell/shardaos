@@ -1,8 +1,9 @@
+# Reference manifest for the current single-region API deployment.
+# Prefer `cloudbuild.yaml` for build + deploy so the image tag stays explicit.
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
   name: school-erp-api
-  namespace: default
   annotations:
     run.googleapis.com/ingress: all
     run.googleapis.com/launch-stage: GA
@@ -10,14 +11,15 @@ spec:
   template:
     metadata:
       annotations:
-        autoscaling.knative.dev/minScale: "2"
-        autoscaling.knative.dev/maxScale: "50"
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "20"
         autoscaling.knative.dev/targetUtilizationPercentage: "70"
         run.googleapis.com/cpu-throttling: "false"
     spec:
-      serviceAccountName: school-erp-sa
+      containerConcurrency: 100
+      timeoutSeconds: 300
       containers:
-        - image: gcr.io/school-erp-prod/api:latest
+        - image: gcr.io/PROJECT_ID/school-erp-api:latest
           ports:
             - containerPort: 3000
           resources:
@@ -29,9 +31,11 @@ spec:
               value: "3000"
             - name: NODE_ENV
               value: "production"
+            - name: AUTH_MODE
+              value: "firebase"
           livenessProbe:
             httpGet:
-              path: /health
+              path: /health/live
               port: 3000
             initialDelaySeconds: 10
             periodSeconds: 30
@@ -39,14 +43,12 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: 3000
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 2
-      timeoutSeconds: 3600
-      concurrency: 100
   traffic:
     - percent: 100
       latestRevision: true

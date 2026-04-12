@@ -1,153 +1,19 @@
-name: 'Pipeline: Deploy to Staging'
+name: 'DRAFT: Legacy Multi-Region Staging Deploy'
 
 on:
-  workflow_run:
-    workflows: ['Pipeline: Security Scanning']
-    types: [completed]
-    branches: [develop]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Target environment'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - staging-us
-          - staging-eu
-
-concurrency:
-  group: deploy-staging-${{ github.ref }}
-  cancel-in-progress: false
 
 jobs:
-  deploy-staging:
+  draft-notice:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    environment: staging
-    
-    permissions:
-      contents: read
-      id-token: write
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Explain current deployment baseline
+        run: |
+          echo "This legacy staging workflow is intentionally disabled."
+          echo "Use cloudbuild.yaml to deploy school-erp-api instead."
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
-      
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          install_components: 'gke-gcloud-auth-plugin'
-      
-      - name: Configure Docker
+      - name: Write summary
         run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build application
-        run: npm run build
-        env:
-          NODE_ENV: staging
-      
-      - name: Build Docker image
-        run: |
-          docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/deerflow/backend:${{ github.sha }} \
-            -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/deerflow/backend:latest \
-            -f Dockerfile .
-      
-      - name: Push Docker image
-        run: |
-          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/deerflow/backend:${{ github.sha }}
-          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/deerflow/backend:latest
-      
-      - name: Deploy to Cloud Run (Staging)
-        run: |
-          gcloud run deploy deerflow-backend-staging \
-            --image=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/deerflow/backend:${{ github.sha }} \
-            --region=us-central1 \
-            --platform managed \
-            --allow-unauthenticated \
-            --set-env-vars=ENVIRONMENT=staging,LOG_LEVEL=DEBUG \
-            --memory=2Gi \
-            --cpu=2 \
-            --timeout=300 \
-            --min-instances=2 \
-            --max-instances=50 \
-            --port=8080 \
-            --project=${{ secrets.GCP_PROJECT_ID }}
-      
-      - name: Run smoke tests against staging
-        run: |
-          npm run test:smoke:staging
-        continue-on-error: true
-        env:
-          BASE_URL: ${{ secrets.STAGING_BASE_URL }}
-      
-      - name: Notify deployment
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const status = '${{ job.status }}' === 'success' ? '✅ Success' : '❌ Failed';
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## Staging Deployment ${status}
-              - **Timestamp**: ${new Date().toISOString()}
-              - **Commit**: ${{ github.sha }}
-              - **Image**: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/deerflow/backend:${{ github.sha }}`
-            });
-      
-      - name: Archive deployment logs
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: staging-deployment-logs
-          path: .deployment-logs/
-          retention-days: 14
-
-  smoke-tests:
-    runs-on: ubuntu-latest
-    needs: deploy-staging
-    timeout-minutes: 15
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run smoke tests
-        run: npm run test:smoke
-        env:
-          BASE_URL: ${{ secrets.STAGING_BASE_URL }}
-          AUTH_TOKEN: ${{ secrets.STAGING_TEST_TOKEN }}
-      
-      - name: Wait for service health
-        run: |
-          npm install -g wait-on
-          wait-on ${{ secrets.STAGING_BASE_URL }}/health --timeout 120000
-        timeout-minutes: 3
+          echo "## Legacy staging workflow disabled" >> $GITHUB_STEP_SUMMARY
+          echo "- Supported path: \`cloudbuild.yaml\` -> Cloud Run service \`school-erp-api\`." >> $GITHUB_STEP_SUMMARY
+          echo "- Legacy multi-region \`deerflow\` staging automation is draft and not authoritative." >> $GITHUB_STEP_SUMMARY

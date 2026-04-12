@@ -28,7 +28,7 @@ export function StudentsPage() {
         columns={columns}
         data={data?.data ?? []}
         isLoading={isLoading}
-        onDelete={(row) => deleteStudent((row as { id: string }).id)}
+        onDelete={(row) => void deleteStudent(row.id).unwrap().catch(() => null)}
       />
 
       {data?.meta && (

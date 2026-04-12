@@ -1,92 +1,73 @@
+substitutions:
+  _SERVICE_NAME: school-erp-api
+  _REGION: asia-south1
+  _IMAGE_NAME: school-erp-api
+
 steps:
-  # Step 1: Build backend API Docker image
+  # Build the current production API image from the repo-root monorepo context.
   - name: 'gcr.io/cloud-builders/docker'
-    id: 'build-backend'
+    id: 'build-api-image'
     args:
       - 'build'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/api:v1.0.0'
+      - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:$SHORT_SHA'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/api:latest'
+      - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest'
       - '-f'
-      - 'apps/api/Dockerfile.prod'
+      - 'apps/api/Dockerfile'
       - '.'
-    dir: '/'
 
-  # Step 2: Push backend image to GCR
   - name: 'gcr.io/cloud-builders/docker'
-    id: 'push-backend'
+    id: 'push-api-image-sha'
     args:
       - 'push'
-      - 'gcr.io/$PROJECT_ID/api:v1.0.0'
-    waitFor: ['build-backend']
+      - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:$SHORT_SHA'
+    waitFor: ['build-api-image']
 
-  # Step 3: Build frontend Docker image
   - name: 'gcr.io/cloud-builders/docker'
-    id: 'build-frontend'
-    args:
-      - 'build'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/web:v1.0.0'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/web:latest'
-      - '-f'
-      - 'apps/web/Dockerfile.prod'
-      - '.'
-    dir: '/'
-
-  # Step 4: Push frontend image to GCR
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'push-frontend'
+    id: 'push-api-image-latest'
     args:
       - 'push'
-      - 'gcr.io/$PROJECT_ID/web:v1.0.0'
-    waitFor: ['build-frontend']
+      - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest'
+    waitFor: ['build-api-image']
 
-  # Step 5: Deploy backend to Cloud Run
-  - name: 'gcr.io/cloud-builders/gke-deploy'
-    id: 'deploy-backend'
+  # Deploy the API only. Web hosting remains a later slice.
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'deploy-api'
     args:
       - 'run'
-      - '--image=gcr.io/$PROJECT_ID/api:v1.0.0'
-      - '--region=us-central1'
-      - '--platform=managed'
-      - '--memory=512Mi'
-      - '--cpu=2'
-      - '--port=8080'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:$SHORT_SHA'
+      - '--region'
+      - '${_REGION}'
+      - '--platform'
+      - 'managed'
       - '--allow-unauthenticated'
-    env:
-      - 'CLOUDSDK_COMPUTE_REGION=us-central1'
-    waitFor: ['push-backend']
-
-  # Step 6: Deploy frontend to Cloud Run
-  - name: 'gcr.io/cloud-builders/gke-deploy'
-    id: 'deploy-frontend'
-    args:
-      - 'run'
-      - '--image=gcr.io/$PROJECT_ID/web:v1.0.0'
-      - '--region=us-central1'
-      - '--platform=managed'
-      - '--memory=256Mi'
-      - '--cpu=1'
-      - '--port=3000'
-      - '--allow-unauthenticated'
-    env:
-      - 'CLOUDSDK_COMPUTE_REGION=us-central1'
-    waitFor: ['push-frontend']
+      - '--port'
+      - '3000'
+      - '--memory'
+      - '2Gi'
+      - '--cpu'
+      - '2'
+      - '--timeout'
+      - '300'
+      - '--concurrency'
+      - '100'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '20'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,AUTH_MODE=firebase,PORT=3000'
+    waitFor: ['push-api-image-sha', 'push-api-image-latest']
 
 images:
-  - 'gcr.io/$PROJECT_ID/api:v1.0.0'
-  - 'gcr.io/$PROJECT_ID/api:latest'
-  - 'gcr.io/$PROJECT_ID/web:v1.0.0'
-  - 'gcr.io/$PROJECT_ID/web:latest'
-
-artifacts:
-  objects:
-    location: 'gs://${PROJECT_ID}_cloudbuild/artifacts'
+  - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest'
 
 options:
-  machineType: 'N1_HIGHCPU_8'
   logging: CLOUD_LOGGING_ONLY
-  
-timeout: '3600s'
+
+timeout: '1800s'

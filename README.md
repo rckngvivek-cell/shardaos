@@ -4,7 +4,8 @@ This repository is the first runnable build derived from the spec set in this fo
 
 - `apps/api`: Node.js + Express + TypeScript API
 - `apps/web`: React + TypeScript + Redux Toolkit web shell
-- `apps/founder`: localhost-only founder control surface
+- `apps/mobile`: React Native + Expo mobile shell
+- `packages/shared`: shared types and schemas used across apps
 - `docs/process`: PRI workflow, weekly summaries, and automation backlog
 - `.github/pull_request_template.md`: PR template aligned to the Plan -> Review -> Implement process
 
@@ -13,10 +14,18 @@ This repository is the first runnable build derived from the spec set in this fo
 This initial build normalizes the specs into a practical starting point:
 
 - Firestore remains the target data store
-- The default local runtime uses an in-memory repository so the app runs without cloud credentials
-- API authentication follows the `Authorization: Bearer <token>` contract and uses `mock` mode locally
-- The first implemented business module is Student Information System CRUD
-- The web app includes a dashboard shell and student management workspace
+- The default local runtime uses `AUTH_MODE=dev` so tenant routes are callable without Firebase credentials
+- The current public API contract lives under `/api/*`
+- Local development uses API `3000` and web `5173`
+- The current implemented slices are students, attendance, grades, school lookup, and the owner plane
+
+## Canonical naming and repo shape
+
+- `School ERP` is the tenant-facing product name.
+- `ShardaOS` is reserved for internal owner-plane surfaces such as `/owner` and `/api/owner`.
+- The package and workspace scope remains `@school-erp/*`.
+- The current runnable baseline does not include `apps/founder`; owner-plane functionality lives inside the existing API and web apps.
+- Legacy `deerflow` names in Terraform and older deployment assets are draft infrastructure references and should not be treated as the runtime source of truth.
 
 ## Why this shape
 
@@ -35,21 +44,30 @@ npm run dev
 
 This starts:
 
-- API at `http://localhost:8080/api/v1`
+- API at `http://localhost:3000`
 - Web app at `http://localhost:5173`
 
-Founder app stays separate and can be started explicitly:
+## Current deployment baseline
+
+The current supported deployment path is API-only:
+
+- Build with `cloudbuild.yaml`
+- Deploy `school-erp-api` to single-region Cloud Run
+- Build image from `apps/api/Dockerfile`
+
+Canonical command:
 
 ```bash
-npm run dev:founder
+gcloud builds submit --config cloudbuild.yaml --substitutions=_SERVICE_NAME=school-erp-api,_REGION=asia-south1 .
 ```
 
-It binds to `http://127.0.0.1:3001`.
+Manual fallback:
 
-The web shell talks to the API using:
+```bash
+PROJECT_ID=your-gcp-project-id REGION=asia-south1 IMAGE_TAG=latest sh infrastructure/cloud-run/deploy-autoscaling.sh
+```
 
-- school id: `demo-school`
-- bearer token: `demo-admin-token`
+Reference: [CURRENT_DEPLOYMENT_BASELINE.md](/c:/Users/vivek/OneDrive/Scans/files/shardaos/docs/deployment/CURRENT_DEPLOYMENT_BASELINE.md:1)
 
 ## Firebase Local Development
 
@@ -61,8 +79,7 @@ cp .env.example .env
 
 The current default local path stays simple:
 
-- `AUTH_MODE=mock`
-- `STORAGE_DRIVER=memory`
+- `AUTH_MODE=dev`
 
 To run the Firebase emulator baseline, install the Firebase CLI and start the emulators:
 
@@ -79,9 +96,10 @@ The root `firebase.json` keeps the emulator ports separate from the API:
 When you want the API to use the emulators, set:
 
 - `AUTH_MODE=firebase`
-- `STORAGE_DRIVER=firestore`
 
-Firestore rules and index placeholders live in `firestore.rules` and `firestore.indexes.json`.
+Firestore rules and composite indexes live in `firestore.rules` and `firestore.indexes.json`.
+
+The current Firestore rules are intentionally conservative: tenant-scoped reads only and no client writes. The API uses the Firebase Admin SDK and is not subject to Firestore rules.
 
 ## Useful commands
 
@@ -91,21 +109,44 @@ npm run build
 npm run lint
 ```
 
+These root validation commands now cover the shared package plus the `api`, `web`, and `mobile` apps.
+
 ## Implemented endpoints
 
-- `GET /api/v1/health`
-- `GET /api/v1/schools/:schoolId`
-- `GET /api/v1/schools/:schoolId/students`
-- `GET /api/v1/schools/:schoolId/students/search`
-- `GET /api/v1/schools/:schoolId/students/:studentId`
-- `POST /api/v1/schools/:schoolId/students`
-- `PATCH /api/v1/schools/:schoolId/students/:studentId`
-- `DELETE /api/v1/schools/:schoolId/students/:studentId`
+- Health:
+  - `GET /api/health`
+  - `GET /health/live`
+  - `GET /health/ready`
+- Auth:
+  - `POST /api/auth/owner/bootstrap`
+  - `GET /api/auth/owner/session`
+- Tenant:
+  - `GET /api/schools/me`
+  - `GET /api/students`
+  - `GET /api/students/:id`
+  - `POST /api/students`
+  - `PUT /api/students/:id`
+  - `DELETE /api/students/:id`
+  - `GET /api/attendance`
+  - `POST /api/attendance`
+  - `POST /api/attendance/bulk`
+  - `GET /api/grades`
+  - `GET /api/grades/student/:studentId`
+  - `POST /api/grades`
+- Owner plane:
+  - `GET /api/owner/owner/me`
+  - `GET /api/owner/owner/summary`
+  - `GET /api/owner/employees`
+  - `POST /api/owner/employees`
+  - `DELETE /api/owner/employees/:id`
+  - `GET /api/owner/approvals`
+  - `POST /api/owner/approvals/:id/approve`
+  - `POST /api/owner/approvals/:id/deny`
 
 ## Next recommended build steps
 
-1. Switch API storage from `memory` to Firestore emulator and then managed Firestore.
-2. Replace mock auth with Firebase Auth verification.
+1. Stabilize Firestore-backed local development with emulator fixtures and seeded test data.
+2. Replace `AUTH_MODE=dev` local bypass with end-to-end Firebase Auth verification in the default local path.
 3. Add attendance module and batch attendance workflows.
 4. Add Firestore security rules, Docker-based local services, and Cloud Run deployment.
 5. Move shared schemas into a dedicated workspace package once API contracts stabilize.

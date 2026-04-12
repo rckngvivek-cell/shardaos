@@ -1,17 +1,6 @@
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-  };
-  meta?: {
-    requestId?: string;
-    page?: number;
-    limit?: number;
-    total?: number;
-  };
-}
+import type { ApiResponse } from '@school-erp/shared';
+
+export type { ApiResponse };
 
 export function successResponse<T>(data: T, meta?: ApiResponse['meta']): ApiResponse<T> {
   return { success: true, data, meta };

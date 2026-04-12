@@ -17,7 +17,7 @@
   - Duplicate components (`ExamAnswerer.tsx` in 2 places, `AppShell.tsx` in 2 places)
   - Mixed patterns: `routes/` AND `modules/` coexist with overlapping responsibility
   - Minimal shared package (1 file, barely used)
-  - Nearly empty founder app (3 files)
+  - Repo-shape drift: some docs and the lockfile referenced a founder workspace that is not part of the current runnable baseline
   - 20+ overlapping deploy scripts
   - 409+ doc files for a small project
   - No clear module boundaries or service contracts
@@ -36,13 +36,15 @@ Everything under these directories:
 apps/api/src/           → All 113 source files
 apps/web/src/           → All 64 source files
 apps/mobile/src/        → All 10 source files
-apps/founder/src/       → All 3 source files
 packages/shared/src/    → The 1 source file
 tests/                  → Exam tests (will rewrite)
 k6/                     → Load tests (will rewrite later)
 scripts/                → 20+ overlapping scripts
 sql/                    → BigQuery schemas (will regen)
 ```
+
+Current baseline note:
+Founder-only capabilities are implemented through the owner plane in `apps/api` and `apps/web`. A standalone `apps/founder` workspace is not part of the current runnable baseline unless a later slice introduces it deliberately.
 
 ### What Gets PRESERVED
 
