@@ -14,7 +14,8 @@
     "build": "npm run build --workspace @school-erp/shared && npm run build --workspace @school-erp/api && npm run build --workspace @school-erp/web && npm run build --workspace @school-erp/mobile",
     "test": "npm run build --workspace @school-erp/shared && npm run test --workspace @school-erp/api && npm run test --workspace @school-erp/mobile",
     "lint": "npm run typecheck --workspace @school-erp/shared && npm run typecheck --workspace @school-erp/api && npm run lint --workspace @school-erp/web && npm run lint --workspace @school-erp/mobile",
-    "typecheck": "npm run typecheck --workspace @school-erp/shared && npm run typecheck --workspace @school-erp/api && npm run typecheck --workspace @school-erp/web && npm run typecheck --workspace @school-erp/mobile"
+    "typecheck": "npm run typecheck --workspace @school-erp/shared && npm run typecheck --workspace @school-erp/api && npm run typecheck --workspace @school-erp/web && npm run typecheck --workspace @school-erp/mobile",
+    "scan:repo": "node scripts/repo-scan.cjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
