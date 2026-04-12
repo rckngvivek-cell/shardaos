@@ -1,14 +1,37 @@
+# Dependencies
 node_modules/
+
+# Build outputs
 dist/
+build/
+.turbo/
+
+# Test coverage
 coverage/
-.DS_Store
-*.log
+
+# Environment files
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-apps/web/.vite/
-apps/api/.turbo/
 
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Binaries
+*.exe
+
+# Vite / Vercel
+apps/web/.vite/
 .vercel
