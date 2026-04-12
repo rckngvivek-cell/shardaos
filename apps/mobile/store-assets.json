@@ -1,0 +1,113 @@
+{
+  "appMetadata": {
+    "appName": "School ERP - Parent Portal",
+    "displayName": "School ERP",
+    "version": "0.1.0",
+    "releaseNotes": "Initial release for pilot schools",
+    "category": "Education",
+    "contentRating": "PEGI 3"
+  },
+  "ios": {
+    "bundleIdentifier": "com.schoolerp.parent",
+    "minimumOSVersion": "13.0",
+    "deviceFamilies": ["iphone", "ipad"],
+    "capabilities": [
+      "pushNotifications",
+      "offlineStorage",
+      "biometricAuth",
+      "backgroundSync"
+    ],
+    "screenshots": [
+      "assets/ios/screenshot-login-iphone.png",
+      "assets/ios/screenshot-dashboard-iphone.png",
+      "assets/ios/screenshot-attendance-iphone.png",
+      "assets/ios/screenshot-grades-iphone.png",
+      "assets/ios/screenshot-messages-iphone.png",
+      "assets/ios/screenshot-login-ipad.png",
+      "assets/ios/screenshot-dashboard-ipad.png",
+      "assets/ios/screenshot-attendance-ipad.png",
+      "assets/ios/screenshot-grades-ipad.png",
+      "assets/ios/screenshot-messages-ipad.png"
+    ],
+    "appStoreMetadata": {
+      "name": "School ERP - Parent Portal",
+      "subtitle": "Monitor your child's academics",
+      "shortDescription": "Real-time attendance, grades, messages, and announcements from your child's school.",
+      "fullDescription": "Keep track of your child's academic progress with School ERP Parent Portal. Get real-time updates on:\n\n✓ Attendance: View daily attendance with calendar and trend analysis\n✓ Grades: Track academic performance across subjects with detailed breakdowns\n✓ Announcements: Stay informed about school events and updates\n✓ Messages: Direct communication with teachers and staff\n✓ Offline Access: App works offline with automatic sync\n\nFeatures:\n• Multi-child support for families with multiple children\n• Dark mode for comfortable evening use\n• Biometric login for enhanced security\n• Push notifications for important updates\n• Downloadable reports and certificates\n\nSupported in English with planned regional language support.",
+      "keywords": ["parent", "school", "attendance", "grades", "education", "academic", "student tracking"],
+      "supportURL": "https://support.schoolerp.io",
+      "privacyPolicyURL": "https://schoolerp.io/privacy",
+      "supportEmail": "support@schoolerp.io",
+      "websiteURL": "https://schoolerp.io"
+    }
+  },
+  "android": {
+    "packageName": "com.schoolerp.parent",
+    "minimumSDK": 26,
+    "targetSDK": 34,
+    "versionCode": 1,
+    "versionName": "0.1.0",
+    "permissions": [
+      "android.permission.INTERNET",
+      "android.permission.CAMERA",
+      "android.permission.READ_CONTACTS",
+      "android.permission.ACCESS_NETWORK_STATE"
+    ],
+    "screenshots": [
+      "assets/android/screenshot-1-login.png",
+      "assets/android/screenshot-2-dashboard.png",
+      "assets/android/screenshot-3-attendance.png",
+      "assets/android/screenshot-4-grades.png",
+      "assets/android/screenshot-5-messages.png",
+      "assets/android/screenshot-6-login-darkmode.png",
+      "assets/android/screenshot-7-dashboard-darkmode.png",
+      "assets/android/screenshot-8-attendance-darkmode.png",
+      "assets/android/screenshot-9-grades-darkmode.png",
+      "assets/android/screenshot-10-messages-darkmode.png",
+      "assets/android/screenshot-11-notifications.png",
+      "assets/android/screenshot-12-settings.png",
+      "assets/android/screenshot-13-offline-mode.png",
+      "assets/android/screenshot-14-multi-child.png",
+      "assets/android/screenshot-15-biometric.png"
+    ],
+    "playStoreMetadata": {
+      "name": "School ERP - Parent Portal",
+      "shortDescription": "Monitor attendance, grades, messages, and announcements",
+      "fullDescription": "Keep track of your child's academic progress with School ERP Parent Portal. Get real-time updates on:\n\n✓ Attendance: View daily attendance with calendar and trend analysis\n✓ Grades: Track academic performance across subjects with detailed breakdowns\n✓ Announcements: Stay informed about school events and updates\n✓ Messages: Direct communication with teachers and staff\n✓ Offline Access: App works offline with automatic sync\n\nFeatures:\n• Multi-child support for families with multiple children\n• Dark mode for comfortable evening use\n• Biometric login for enhanced security\n• Push notifications for important updates\n• Downloadable reports and certificates\n\nSupported in English with planned regional language support.",
+      "keywords": ["parent", "school", "attendance", "grades", "education"],
+      "category": "Education",
+      "contentRating": "Everyone",
+      "privacyPolicyURL": "https://schoolerp.io/privacy",
+      "supportEmail": "support@schoolerp.io",
+      "websiteURL": "https://schoolerp.io",
+      "targetAudience": "Parents and Guardians"
+    }
+  },
+  "buildConfiguration": {
+    "production": {
+      "environment": "production",
+      "apiEndpoint": "https://api.schoolerp.io",
+      "firebaseConfig": {
+        "projectId": "school-erp-prod",
+        "databaseURL": "https://school-erp-prod.firebaseio.com",
+        "storageBucket": "school-erp-prod.appspot.com"
+      }
+    },
+    "staging": {
+      "environment": "staging",
+      "apiEndpoint": "https://staging-api.schoolerp.io",
+      "firebaseConfig": {
+        "projectId": "school-erp-staging",
+        "databaseURL": "https://school-erp-staging.firebaseio.com",
+        "storageBucket": "school-erp-staging.appspot.com"
+      }
+    }
+  },
+  "releaseTimeline": {
+    "testFlightSubmission": "2026-04-10T10:00:00Z",
+    "appStoreSubmission": "2026-04-10T11:00:00Z",
+    "playStoreSubmission": "2026-04-10T11:30:00Z",
+    "expectedAppStoreApproval": "2026-04-12T00:00:00Z",
+    "expectedPlayStoreApproval": "2026-04-10T15:00:00Z"
+  }
+}

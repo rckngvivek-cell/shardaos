@@ -1,0 +1,90 @@
+default_platform(:android)
+
+platform :android do
+  desc "Run Android tests with JUnit"
+  lane :run_tests do
+    gradle(
+      task: "test",
+      project_dir: "android/",
+      properties: {
+        "android.testInstrumentationRunner" => "androidx.test.runner.AndroidJUnitRunner"
+      }
+    )
+    
+    # Generate coverage report
+    gradle(
+      task: "jacocoTestReport",
+      project_dir: "android/"
+    )
+  end
+
+  desc "Build Android release APK and AAB for Play Store"
+  lane :build_release do
+    # Ensure gradlew is executable
+    sh("cd android && chmod +x gradlew")
+    
+    # Increment version code
+    increment_version_code(
+      gradle_file_path: "android/app/build.gradle"
+    )
+    
+    # Build release APK
+    gradle(
+      task: "assembleRelease",
+      project_dir: "android/"
+    )
+    
+    # Build release AAB (App Bundle for Play Store)
+    gradle(
+      task: "bundleRelease",
+      project_dir: "android/"
+    )
+  end
+
+  desc "Upload to Google Play Beta"
+  lane :upload_playstore do
+    # Prerequisites: Set SUPPLY_JSON_KEY or GOOGLE_APPLICATION_CREDENTIALS
+    # JSON key should have Play Developer API access
+    
+    upload_to_play(
+      track: "beta",
+      aab: "android/app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_apk: true,
+      release_status: "completed",
+      version_name: get_version_name,
+      release_notes: {
+        "en-US" => "Week 5: Mobile CI/CD Release - Automated Google Play deployment via GitHub Actions"
+      },
+      package_name: "com.schoolerp.mobile",
+      json_key: ENV["SUPPLY_JSON_KEY"],
+      skip_upload_images: false,
+      skip_upload_screenshots: false
+    )
+  end
+
+  desc "Complete Android build and upload pipeline"
+  lane :ci_build do
+    run_tests
+    build_release
+    upload_playstore
+  end
+
+  def get_version_name
+    version_file = File.join(Dir.pwd, "android", "app", "version.properties")
+    if File.exist?(version_file)
+      File.read(version_file).match(/version=(.+)/)[1]
+    else
+      "1.0.0"
+    end
+  end
+
+  desc "Increment version code"
+  lane :increment_version_code do |options|
+    gradle_file = options[:gradle_file_path]
+    content = File.read(gradle_file)
+    version_code = content.match(/versionCode (\d+)/)[1].to_i + 1
+    content = content.gsub(/versionCode \d+/, "versionCode #{version_code}")
+    File.write(gradle_file, content)
+    UI.success("✅ Incremented versionCode to #{version_code}")
+  end
+end

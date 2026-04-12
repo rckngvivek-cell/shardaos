@@ -1,0 +1,120 @@
+name: 'Pipeline: Integration Tests'
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_run:
+    workflows: ['Pipeline: Unit Tests']
+    types: [completed]
+
+concurrency:
+  group: integration-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    services:
+      firestore-emulator:
+        image: google/cloud-datastore-emulator:latest
+        ports:
+          - 8081:8081
+        options: --health-cmd="curl -f http://localhost:8081/ping || exit 1" --health-interval=10s --health-timeout=5s --health-retries=5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=5
+    
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    env:
+      FIRESTORE_EMULATOR_HOST: localhost:8081
+      REDIS_URL: redis://localhost:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+        timeout-minutes: 10
+      
+      - name: Wait for services
+        run: |
+          npm install -g wait-on
+          wait-on http://localhost:8081/ping
+          wait-on redis://localhost:6379
+        timeout-minutes: 5
+      
+      - name: Run database migrations
+        run: npm run migrate:test
+        continue-on-error: true
+      
+      - name: Run integration tests
+        run: npm run test:integration -- --coverage
+        timeout-minutes: 30
+        env:
+          NODE_ENV: test
+      
+      - name: Run API contract tests
+        run: npm run test:api-contracts
+        continue-on-error: true
+        timeout-minutes: 15
+      
+      - name: Upload integration coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/integration-coverage.json
+          flags: integration
+          verbose: true
+      
+      - name: Publish integration test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: 'Integration Test Results'
+          path: 'integration-test-results.xml'
+          reporter: 'java-junit'
+          fail-on-error: false
+      
+      - name: Archive integration test reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-reports
+          path: |
+            coverage/
+            integration-test-results.xml
+            test-logs/
+          retention-days: 30
+      
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ job.status }}' === 'success' ? '✅ PASSED' : '❌ FAILED';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Integration Tests ${status}`
+            });

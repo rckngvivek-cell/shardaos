@@ -1,0 +1,42 @@
+# Local development files
+.env.local
+.env.development
+node_modules/
+*.log
+
+# Build artifacts
+.next/
+.turbo/
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Testing
+coverage/
+.nyc_output/
+
+# Local documentation
+localhost*.md
+local*.md
+DEPLOYMENT_*
+FIX_DATA_NOT_SHOWING.md
+BILLING_*.md
+PRODUCTION_DEPLOYMENT_IN_PROGRESS.md
+
+# Temporary
+*.tmp
+*.bak

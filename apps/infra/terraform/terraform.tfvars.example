@@ -1,0 +1,54 @@
+# Example Terraform variables file
+# Copy this to terraform.tfvars and fill in actual values
+
+gcp_project           = "school-erp-prod"
+primary_region        = "us-central1"
+replica_regions       = ["asia-south1", "europe-west1"]
+container_image       = "gcr.io/school-erp-prod/school-erp-api:latest"
+min_instances_primary = 2
+max_instances_primary = 10
+min_instances_secondary = 1
+max_instances_secondary = 5
+cloud_run_cpu           = "2"
+cloud_run_memory        = "2Gi"
+
+# Alert & notification settings
+alert_email       = "devops@school-erp.com"
+slack_webhook_url = "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+
+# Third-party API credentials (store in Secret Manager reference!)
+twilio_account_sid = "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+twilio_auth_token  = "your_auth_token_here"
+sendgrid_api_key   = "SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+fcm_server_key     = "your_fcm_server_key_here"
+
+# Backup settings
+backup_retention_days = 90
+enable_disaster_recovery = true
+
+# Cloud Run configuration
+environment_vars = {
+  ENVIRONMENT        = "production"
+  LOG_LEVEL          = "info"
+  DATABASE_LOCATION  = "us-central1"
+  API_VERSION        = "v1"
+}
+
+secrets = {
+  TWILIO_ACCOUNT_SID = {
+    key     = "twilio-account-sid"
+    version = "latest"
+  }
+  TWILIO_AUTH_TOKEN = {
+    key     = "twilio-auth-token"
+    version = "latest"
+  }
+  SENDGRID_API_KEY = {
+    key     = "sendgrid-api-key"
+    version = "latest"
+  }
+  FCM_SERVER_KEY = {
+    key     = "fcm-server-key"
+    version = "latest"
+  }
+}

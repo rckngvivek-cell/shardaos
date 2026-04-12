@@ -1,0 +1,352 @@
+{
+  "dashboard_id": "exam-realtime-metrics-v1",
+  "dashboard_name": "Exam Analytics - Real-time Dashboard",
+  "description": "Real-time exam performance metrics, student results, and question analytics",
+  "created_date": "2026-04-10",
+  "module": "Module 3 - Exam/Assessment",
+  "owner": "Data Engineering Team",
+  "refresh_interval_minutes": 5,
+  "is_scheduled": true,
+  "scheduled_reports": [
+    {
+      "name": "Daily Exam Report",
+      "recipients": ["principals@schools.io", "analytics@erp.com"],
+      "schedule": "Daily at 7:00 AM UTC",
+      "format": "PDF"
+    },
+    {
+      "name": "Weekly Trends Report",
+      "recipients": ["cto@erp.com"],
+      "schedule": "Every Monday at 8:00 AM UTC",
+      "format": "Excel"
+    }
+  ],
+  "data_source": {
+    "type": "BigQuery",
+    "project_id": "school-erp-dev",
+    "dataset": "exam_analytics",
+    "tables": [
+      "exam_events",
+      "exam_submissions",
+      "question_metrics",
+      "student_exam_results",
+      "exam_performance_summary"
+    ]
+  },
+  "global_filters": [
+    {
+      "filter_id": "date_range",
+      "filter_name": "Date Range",
+      "filter_type": "date_range",
+      "field": "exam_performance_summary.summary_date",
+      "default_value": "last_30_days",
+      "filter_position": 1
+    },
+    {
+      "filter_id": "school_filter",
+      "filter_name": "School",
+      "filter_type": "dropdown",
+      "field": "exam_performance_summary.school_id",
+      "data_source": "SELECT DISTINCT school_id FROM exam_analytics.exam_performance_summary ORDER BY school_id",
+      "multi_select": true,
+      "filter_position": 2
+    },
+    {
+      "filter_id": "exam_filter",
+      "filter_name": "Exam",
+      "filter_type": "dropdown",
+      "field": "exam_performance_summary.exam_id",
+      "data_source": "SELECT DISTINCT exam_id FROM exam_analytics.exam_performance_summary ORDER BY exam_id",
+      "multi_select": true,
+      "filter_position": 3
+    },
+    {
+      "filter_id": "class_filter",
+      "filter_name": "Class",
+      "filter_type": "dropdown",
+      "field": "exam_performance_summary.class_id",
+      "data_source": "SELECT DISTINCT class_id FROM exam_analytics.exam_performance_summary WHERE class_id IS NOT NULL ORDER BY class_id",
+      "multi_select": true,
+      "filter_position": 4
+    }
+  ],
+  "visualizations": [
+    {
+      "viz_id": "pass_rate_gauge",
+      "viz_position": 1,
+      "viz_row": 1,
+      "viz_column": 1,
+      "viz_width": 4,
+      "viz_height": 3,
+      "viz_name": "Pass Rate Gauge",
+      "viz_type": "gauge",
+      "description": "Real-time pass rate percentage across selected filters",
+      "query": {
+        "type": "sql",
+        "template": "SELECT AVG(pass_rate) as pass_rate FROM `school-erp-dev.exam_analytics.exam_performance_summary` WHERE summary_date >= @start_date AND summary_date <= @end_date"
+      },
+      "metric_field": "pass_rate",
+      "metric_suffix": "%",
+      "gauge_min": 0,
+      "gauge_max": 100,
+      "gauge_thresholds": [
+        {
+          "value": 50,
+          "color": "red",
+          "label": "Critical"
+        },
+        {
+          "value": 75,
+          "color": "yellow",
+          "label": "Warning"
+        },
+        {
+          "value": 85,
+          "color": "green",
+          "label": "Good"
+        }
+      ],
+      "refresh_interval_seconds": 30,
+      "cache_ttl_minutes": 1
+    },
+    {
+      "viz_id": "avg_score_trend",
+      "viz_position": 2,
+      "viz_row": 1,
+      "viz_column": 5,
+      "viz_width": 8,
+      "viz_height": 3,
+      "viz_name": "Average Score Trend",
+      "viz_type": "line_chart",
+      "description": "Average exam score trend over selected date range",
+      "query": {
+        "type": "sql",
+        "template": "SELECT summary_date, AVG(avg_score) as average_score FROM `school-erp-dev.exam_analytics.exam_performance_summary` WHERE summary_date >= @start_date AND summary_date <= @end_date GROUP BY summary_date ORDER BY summary_date"
+      },
+      "x_field": "summary_date",
+      "y_field": "average_score",
+      "chart_properties": {
+        "title": "Average Score Trend",
+        "show_legend": true,
+        "show_data_labels": false,
+        "line_thickness": 2,
+        "point_size": 4,
+        "color": "#4285F4"
+      },
+      "refresh_interval_seconds": 60,
+      "cache_ttl_minutes": 5
+    },
+    {
+      "viz_id": "student_performance_scatter",
+      "viz_position": 3,
+      "viz_row": 4,
+      "viz_column": 1,
+      "viz_width": 6,
+      "viz_height": 4,
+      "viz_name": "Student Performance Scatter",
+      "viz_type": "scatter_chart",
+      "description": "Students vs scores with performance distribution visualization",
+      "query": {
+        "type": "sql",
+        "template": "SELECT student_id, score, time_spent_seconds, passed FROM `school-erp-dev.exam_analytics.student_exam_results` WHERE attempts_date >= @start_date AND attempts_date <= @end_date LIMIT 1000"
+      },
+      "x_field": "time_spent_seconds",
+      "y_field": "score",
+      "color_field": "passed",
+      "chart_properties": {
+        "title": "Student Performance vs Time Spent",
+        "show_legend": true,
+        "point_opacity": 0.7,
+        "point_size": 6,
+        "colors": ["#EA4B35", "#34A853"]
+      },
+      "refresh_interval_seconds": 120,
+      "cache_ttl_minutes": 10
+    },
+    {
+      "viz_id": "top_questions_table",
+      "viz_position": 4,
+      "viz_row": 4,
+      "viz_column": 7,
+      "viz_width": 6,
+      "viz_height": 4,
+      "viz_name": "Questions by Difficulty & Success",
+      "viz_type": "table",
+      "description": "Top questions sorted by difficulty and success rate metrics",
+      "query": {
+        "type": "sql",
+        "template": "SELECT question_id, exam_id, question_type, success_rate, difficulty_rating, avg_time_spent_seconds, total_attempts FROM `school-erp-dev.exam_analytics.question_metrics` WHERE metric_date >= @start_date AND metric_date <= @end_date ORDER BY difficulty_rating DESC, success_rate ASC LIMIT 20"
+      },
+      "columns": [
+        {
+          "name": "question_id",
+          "label": "Question ID",
+          "type": "string",
+          "width": "15%"
+        },
+        {
+          "name": "question_type",
+          "label": "Type",
+          "type": "string",
+          "width": "10%"
+        },
+        {
+          "name": "success_rate",
+          "label": "Success Rate %",
+          "type": "number",
+          "format": "0.00",
+          "width": "15%"
+        },
+        {
+          "name": "difficulty_rating",
+          "label": "Difficulty",
+          "type": "number",
+          "format": "0.00",
+          "width": "12%"
+        },
+        {
+          "name": "avg_time_spent_seconds",
+          "label": "Avg Time (s)",
+          "type": "number",
+          "format": "0",
+          "width": "15%"
+        },
+        {
+          "name": "total_attempts",
+          "label": "Total Attempts",
+          "type": "number",
+          "format": "0",
+          "width": "15%"
+        }
+      ],
+      "sorting": [
+        {
+          "column": "difficulty_rating",
+          "order": "DESC"
+        }
+      ],
+      "pagination": true,
+      "rows_per_page": 20,
+      "refresh_interval_seconds": 180,
+      "cache_ttl_minutes": 15
+    },
+    {
+      "viz_id": "schools_leaderboard",
+      "viz_position": 5,
+      "viz_row": 8,
+      "viz_column": 1,
+      "viz_width": 13,
+      "viz_height": 4,
+      "viz_name": "Schools Leaderboard",
+      "viz_type": "table",
+      "description": "School performance ranking by average score and pass rate",
+      "query": {
+        "type": "sql",
+        "template": "SELECT school_id, ROUND(AVG(avg_score), 2) as avg_score, ROUND(AVG(pass_rate), 2) as pass_rate, SUM(total_students) as total_students, ROUND(AVG(median_score), 2) as median_score FROM `school-erp-dev.exam_analytics.exam_performance_summary` WHERE summary_date >= @start_date AND summary_date <= @end_date GROUP BY school_id ORDER BY avg_score DESC LIMIT 50"
+      },
+      "columns": [
+        {
+          "name": "school_id",
+          "label": "School ID",
+          "type": "string",
+          "width": "15%"
+        },
+        {
+          "name": "avg_score",
+          "label": "Avg Score",
+          "type": "number",
+          "format": "0.00",
+          "width": "15%"
+        },
+        {
+          "name": "pass_rate",
+          "label": "Pass Rate %",
+          "type": "number",
+          "format": "0.00",
+          "width": "15%"
+        },
+        {
+          "name": "total_students",
+          "label": "Total Students",
+          "type": "number",
+          "format": "0",
+          "width": "15%"
+        },
+        {
+          "name": "median_score",
+          "label": "Median Score",
+          "type": "number",
+          "format": "0.00",
+          "width": "15%"
+        }
+      ],
+      "sorting": [
+        {
+          "column": "avg_score",
+          "order": "DESC"
+        }
+      ],
+      "row_styling": {
+        "alternating_colors": true,
+        "highlight_top_3": true
+      },
+      "pagination": true,
+      "rows_per_page": 50,
+      "refresh_interval_seconds": 300,
+      "cache_ttl_minutes": 30
+    }
+  ],
+  "advanced_features": {
+    "drill_down": {
+      "enabled": true,
+      "viz_id": "schools_leaderboard",
+      "drill_field": "school_id",
+      "target_dashboard": "exam-school-detail"
+    },
+    "data_export": {
+      "enabled": true,
+      "formats": ["CSV", "Excel", "PDF"]
+    },
+    "custom_alerts": [
+      {
+        "alert_id": "low_pass_rate",
+        "alert_name": "Low Pass Rate Alert",
+        "condition": "pass_rate < 60",
+        "notification": "Email",
+        "recipients": ["analytics@erp.com", "admin@erp.com"],
+        "severity": "high"
+      },
+      {
+        "alert_id": "high_question_difficulty",
+        "alert_name": "Difficult Questions Detection",
+        "condition": "success_rate < 30",
+        "notification": "Email",
+        "recipients": ["analytics@erp.com"],
+        "severity": "medium",
+        "table": "question_metrics"
+      }
+    ]
+  },
+  "metadata": {
+    "sla_requirements": {
+      "query_timeout_seconds": 30,
+      "max_data_latency_seconds": 300,
+      "target_availability_percent": 99.5
+    },
+    "tags": ["exam", "analytics", "real-time", "week7", "module3"],
+    "version": "1.0",
+    "last_updated": "2026-04-10",
+    "created_by": "Data Engineer",
+    "data_classification": "internal"
+  },
+  "documentation": {
+    "dashboard_purpose": "Real-time monitoring of exam performance across schools, classes, and individual students. Used for identifying struggling students, problematic questions, and performance trends.",
+    "refresh_strategy": "Primary visualizations refresh every 5 minutes. Gauges update every 30 seconds. Summary tables update every 15 minutes.",
+    "data_freshness_notes": "Streaming events are available within 2 seconds. Aggregated data (performance_summary) updates nightly at 2 AM UTC with same-day incremental updates.",
+    "known_limitations": [
+      "Row-level security enforced at BigQuery dataset level (each school sees only their data)",
+      "Historical data > 90 days archived to GCS (available upon request)",
+      "Real-time drill-down limited to last 30 days for performance"
+    ]
+  }
+}

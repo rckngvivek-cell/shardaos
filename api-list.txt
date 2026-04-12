@@ -1,0 +1,975 @@
+/api-conventions.md
+POST /api/admin/login
+POST /api/admin/verify-2fa
+POST /api/admin/verify-device
+/api/v1/...
+POST /api/v1/academic-continuity/plans
+POST /api/v1/academic-continuity/plans/:continuityPlanId/drills
+GET /api/v1/academic-continuity/summary
+/api/v1/academic-terms/:academicTermId
+POST /api/v1/academic-years
+/api/v1/academic-years/${academicYearId}/overview
+/api/v1/academic-years/:academicYearId/overview
+POST /api/v1/adaptive-intervention-calibration/runs
+POST /api/v1/adaptive-intervention-calibration/runs/:interventionCalibrationRunId/actions
+GET /api/v1/adaptive-intervention-calibration/summary
+POST /api/v1/adaptive-intervention-causal-efficacy/runs
+POST /api/v1/adaptive-intervention-causal-efficacy/runs/:causalEfficacyRunId/actions
+GET /api/v1/adaptive-intervention-causal-efficacy/summary
+POST /api/v1/adaptive-pacing-robustness/runs
+POST /api/v1/adaptive-pacing-robustness/runs/:pacingRobustnessRunId/actions
+GET /api/v1/adaptive-pacing-robustness/summary
+/api/v1/admissions/crm/dashboard?${dashboardParams.toString()}
+/api/v1/admissions/crm/journeys
+/api/v1/admissions/crm/journeys/${encodeURIComponent(journeyId)}/advance
+/api/v1/admissions/crm/journeys/${encodeURIComponent(journeyId)}/applications
+/api/v1/admissions/crm/journeys/${encodeURIComponent(journeyId)}/tasks
+/api/v1/admissions/crm/journeys/${encodeURIComponent(journeyId)}/visits
+/api/v1/admissions/crm/journeys?${params.toString()}
+/api/v1/admissions/crm/run-due
+/api/v1/admissions/crm/tasks/${encodeURIComponent(crmTaskId)}/complete
+POST /api/v1/ai-safety/suites
+POST /api/v1/ai-safety/suites/:suiteId/runs
+GET /api/v1/ai-tutor/impact
+POST /api/v1/ai-tutor/sessions
+POST /api/v1/ai-tutor/sessions/:tutorSessionId/flag
+GET /api/v1/ai/consents
+POST /api/v1/ai/consents
+POST /api/v1/ai/models
+POST /api/v1/ai/routing-policies
+POST /api/v1/ai/routing/resolve
+POST /api/v1/ai/runs
+GET /api/v1/ai/runs/:runId
+POST /api/v1/ai/simulation-compliance
+POST /api/v1/ai/tools/execute
+GET /api/v1/alerts
+POST /api/v1/algorithm-transparency/reports
+POST /api/v1/algorithm-transparency/reports/:reportId/reviews
+POST /api/v1/alignment-scorecards
+POST /api/v1/alignment-scorecards/:scorecardId/signals
+GET /api/v1/analytics/snapshots
+POST /api/v1/applications
+POST /api/v1/assessment-accessibility-reliability/reviews
+POST /api/v1/assessment-accessibility-reliability/reviews/:accessibilityReviewId/findings
+GET /api/v1/assessment-accessibility-reliability/summary
+POST /api/v1/assessment-accommodation-integrity/reviews
+POST /api/v1/assessment-accommodation-integrity/reviews/:accommodationReviewId/findings
+GET /api/v1/assessment-accommodation-integrity/summary
+POST /api/v1/assessment-authenticity-assurance/scans
+POST /api/v1/assessment-authenticity-assurance/scans/:authenticityScanId/findings
+GET /api/v1/assessment-authenticity-assurance/summary
+POST /api/v1/assessment-calibration/runs
+POST /api/v1/assessment-calibration/runs/:calibrationRunId/findings
+GET /api/v1/assessment-calibration/summary
+POST /api/v1/assessment-comparability/runs
+POST /api/v1/assessment-comparability/runs/:comparabilityRunId/findings
+GET /api/v1/assessment-comparability/summary
+POST /api/v1/assessment-context-adaptivity/reviews
+POST /api/v1/assessment-context-adaptivity/reviews/:adaptivityReviewId/findings
+GET /api/v1/assessment-context-adaptivity/summary
+POST /api/v1/assessment-explainability/reviews
+POST /api/v1/assessment-explainability/reviews/:explainabilityReviewId/findings
+GET /api/v1/assessment-explainability/summary
+POST /api/v1/assessment-fairness/audits
+POST /api/v1/assessment-fairness/audits/:auditId/findings
+GET /api/v1/assessment-fairness/summary
+POST /api/v1/assessment-integrity/scans
+POST /api/v1/assessment-integrity/scans/:integrityScanId/incidents
+GET /api/v1/assessment-integrity/summary
+POST /api/v1/assessment-item-provenance/scans
+POST /api/v1/assessment-item-provenance/scans/:provenanceScanId/findings
+GET /api/v1/assessment-item-provenance/summary
+POST /api/v1/assessment-longitudinal-consistency/runs
+POST /api/v1/assessment-longitudinal-consistency/runs/:consistencyRunId/findings
+GET /api/v1/assessment-longitudinal-consistency/summary
+POST /api/v1/assessment-misconduct-forensics/scans
+POST /api/v1/assessment-misconduct-forensics/scans/:misconductScanId/findings
+GET /api/v1/assessment-misconduct-forensics/summary
+POST /api/v1/assessment-model-robustness/scans
+POST /api/v1/assessment-model-robustness/scans/:robustnessScanId/findings
+GET /api/v1/assessment-model-robustness/summary
+POST /api/v1/assessment-proctoring-integrity/scans
+POST /api/v1/assessment-proctoring-integrity/scans/:proctoringScanId/findings
+GET /api/v1/assessment-proctoring-integrity/summary
+POST /api/v1/assessment-quality/analyses
+POST /api/v1/assessment-quality/analyses/:analysisId/findings
+GET /api/v1/assessment-quality/summary
+POST /api/v1/assessment-recovery-integrity/reviews
+POST /api/v1/assessment-recovery-integrity/reviews/:recoveryIntegrityReviewId/findings
+GET /api/v1/assessment-recovery-integrity/summary
+POST /api/v1/assessment-retake-bias-drift/reviews
+POST /api/v1/assessment-retake-bias-drift/reviews/:retakeBiasReviewId/findings
+GET /api/v1/assessment-retake-bias-drift/summary
+POST /api/v1/assessment-retake-equivalence/reviews
+POST /api/v1/assessment-retake-equivalence/reviews/:retakeEquivalenceReviewId/findings
+GET /api/v1/assessment-retake-equivalence/summary
+POST /api/v1/assessment-security-resilience/scans
+POST /api/v1/assessment-security-resilience/scans/:resilienceScanId/findings
+GET /api/v1/assessment-security-resilience/summary
+POST /api/v1/assessment-stress-risk/reviews
+POST /api/v1/assessment-stress-risk/reviews/:stressReviewId/findings
+GET /api/v1/assessment-stress-risk/summary
+POST /api/v1/assessment-validity/reviews
+POST /api/v1/assessment-validity/reviews/:validityReviewId/findings
+GET /api/v1/assessment-validity/summary
+POST /api/v1/assessments/blueprints
+POST /api/v1/assessments/sessions
+GET /api/v1/assets
+POST /api/v1/assignments
+POST /api/v1/assurance-cases
+POST /api/v1/assurance-cases/:caseId/evidence
+POST /api/v1/attendance/mark
+GET /api/v1/audit/events
+/api/v1/audit/events?tenant_id=${encodeURIComponent(workspace.tenant_id)}&limit=200
+/api/v1/auth/owner/activation:finish
+POST /api/v1/auth/owner/activation:finish
+/api/v1/auth/owner/activation:start
+POST /api/v1/auth/owner/activation:start
+POST /api/v1/auth/owner/bootstrap:finish
+POST /api/v1/auth/owner/bootstrap:start
+POST /api/v1/auth/owner/devices
+/api/v1/auth/owner/invitations
+POST /api/v1/auth/owner/invitations
+/api/v1/auth/owner/invitations/${encodeURIComponent(safeTokenId)}/revoke
+POST /api/v1/auth/owner/invitations/:tokenId/revoke
+/api/v1/auth/owner/invitations?tenant_id=${encodeURIComponent(workspace.tenant_id)}&limit=50
+/api/v1/auth/owner/login:finish
+POST /api/v1/auth/owner/login:finish
+/api/v1/auth/owner/login:register-key
+POST /api/v1/auth/owner/login:register-key
+/api/v1/auth/password/login
+POST /api/v1/auth/password/login
+/api/v1/auth/platform-owner/access-model
+/api/v1/auth/platform-owner/activity?${params.toString()}
+/api/v1/auth/platform-owner/authority
+/api/v1/auth/platform-owner/bootstrap:finish
+POST /api/v1/auth/platform-owner/bootstrap:finish
+/api/v1/auth/platform-owner/bootstrap:start
+POST /api/v1/auth/platform-owner/bootstrap:start
+/api/v1/auth/platform-owner/devices/${encodeURIComponent(device.device_id)}/retire
+/api/v1/auth/platform-owner/login:finish
+POST /api/v1/auth/platform-owner/login:finish
+/api/v1/auth/platform-owner/login:register-key
+POST /api/v1/auth/platform-owner/login:register-key
+/api/v1/auth/platform-owner/login:start
+POST /api/v1/auth/platform-owner/login:start
+/api/v1/auth/platform-owner/login:unlock
+/api/v1/auth/platform-owner/security-keys/${encodeURIComponent(key.credential_id)}/retire
+/api/v1/auth/platform-owner/totp-rotation:finish
+/api/v1/auth/platform-owner/totp-rotation:start
+POST /api/v1/autonomous-ops/plans
+POST /api/v1/autonomous-ops/runs/:runId/approve
+POST /api/v1/autonomy-override/cases
+POST /api/v1/autonomy-override/cases/:caseId/rulings
+POST /api/v1/autonomy-safety/switches
+POST /api/v1/autonomy-safety/switches/:switchId/overrides
+POST /api/v1/bias-redress/cases
+POST /api/v1/bias-redress/cases/:caseId/remediations
+POST /api/v1/board-intelligence/packs
+POST /api/v1/board-intelligence/packs/:packId/questions
+POST /api/v1/campus-digital-twin/snapshots
+POST /api/v1/campus-digital-twin/snapshots/:snapshotId/insights
+/api/v1/campuses
+POST /api/v1/campuses
+POST /api/v1/capacity/snapshots
+POST /api/v1/capacity/snapshots/:capacitySnapshotId/optimize
+GET /api/v1/capacity/summary
+POST /api/v1/career-outcomes/records
+POST /api/v1/career-outcomes/records/:outcomeId/feedback
+GET /api/v1/career-outcomes/summary
+POST /api/v1/causal-impact/experiments
+POST /api/v1/causal-impact/experiments/:experimentId/findings
+POST /api/v1/cleanroom/queries
+POST /api/v1/cleanroom/queries/:queryId/run
+GET /api/v1/clinic/visits
+POST /api/v1/community-partnerships/programs
+POST /api/v1/community-partnerships/programs/:programId/placements
+GET /api/v1/community-partnerships/summary
+POST /api/v1/competencies
+POST /api/v1/competencies/domains
+POST /api/v1/compliance-autopilot/controls
+POST /api/v1/compliance-autopilot/controls/:controlId/runs
+POST /api/v1/compliance-flight/records
+POST /api/v1/compliance-flight/records/:recordId/events
+POST /api/v1/compute-attestations/sessions
+POST /api/v1/compute-attestations/sessions/:sessionId/evidence
+POST /api/v1/consent-comprehension-fidelity/audits
+POST /api/v1/consent-comprehension-fidelity/audits/:consentComprehensionAuditId/actions
+GET /api/v1/consent-comprehension-fidelity/summary
+POST /api/v1/consent-comprehension-renewal/audits
+POST /api/v1/consent-comprehension-renewal/audits/:consentRenewalAuditId/actions
+GET /api/v1/consent-comprehension-renewal/summary
+POST /api/v1/consent-evidence/cases
+POST /api/v1/consent-evidence/cases/:caseId/entries
+POST /api/v1/consent-orchestration/flows
+POST /api/v1/consent-orchestration/flows/:flowId/steps
+POST /api/v1/consent-receipts
+POST /api/v1/consent-receipts/:consentId/revoke
+POST /api/v1/consent-revocations
+POST /api/v1/consent-revocations/:revocationId/propagations
+POST /api/v1/control-plane/audit-locks
+POST /api/v1/control-plane/entitlements:snapshot
+POST /api/v1/control-plane/policies
+POST /api/v1/credential-audit/packs
+POST /api/v1/credential-audit/packs/:packId/entries
+POST /api/v1/credential-trust/exchanges
+POST /api/v1/credential-trust/shares/:shareId/verify
+POST /api/v1/credentials
+POST /api/v1/credentials/:credentialId/verify
+POST /api/v1/cross-border/policies
+POST /api/v1/cross-border/policies/:policyId/assessments
+POST /api/v1/cross-tenant-risk/exposures
+POST /api/v1/cross-tenant-risk/exposures/:exposureId/partners
+POST /api/v1/crypto-agility/plans
+POST /api/v1/crypto-agility/plans/:planId/rotations
+POST /api/v1/curriculum-coauthoring-governance/reviews
+POST /api/v1/curriculum-coauthoring-governance/reviews/:coauthoringReviewId/actions
+GET /api/v1/curriculum-coauthoring-governance/summary
+POST /api/v1/curriculum-coherence/scans
+POST /api/v1/curriculum-coherence/scans/:coherenceScanId/actions
+GET /api/v1/curriculum-coherence/summary
+POST /api/v1/curriculum-competency-mapping/assessments
+POST /api/v1/curriculum-competency-mapping/assessments/:competencyMappingAssessmentId/actions
+GET /api/v1/curriculum-competency-mapping/summary
+POST /api/v1/curriculum-credential-portability/assessments
+POST /api/v1/curriculum-credential-portability/assessments/:credentialPortabilityAssessmentId/actions
+GET /api/v1/curriculum-credential-portability/summary
+POST /api/v1/curriculum-drift/scans
+POST /api/v1/curriculum-drift/scans/:driftScanId/actions
+GET /api/v1/curriculum-drift/summary
+POST /api/v1/curriculum-ecosystem-alignment/assessments
+POST /api/v1/curriculum-ecosystem-alignment/assessments/:ecosystemAlignmentAssessmentId/actions
+GET /api/v1/curriculum-ecosystem-alignment/summary
+POST /api/v1/curriculum-evidence-coverage/assessments
+POST /api/v1/curriculum-evidence-coverage/assessments/:evidenceCoverageAssessmentId/actions
+GET /api/v1/curriculum-evidence-coverage/summary
+POST /api/v1/curriculum-evidence-decay-forecast/forecasts
+POST /api/v1/curriculum-evidence-decay-forecast/forecasts/:evidenceDecayForecastId/actions
+GET /api/v1/curriculum-evidence-decay-forecast/summary
+POST /api/v1/curriculum-evidence-timeliness/assessments
+POST /api/v1/curriculum-evidence-timeliness/assessments/:evidenceTimelinessAssessmentId/actions
+GET /api/v1/curriculum-evidence-timeliness/summary
+POST /api/v1/curriculum-future-readiness/assessments
+POST /api/v1/curriculum-future-readiness/assessments/:futureReadinessAssessmentId/actions
+GET /api/v1/curriculum-future-readiness/summary
+POST /api/v1/curriculum-innovation-impact/studies
+POST /api/v1/curriculum-innovation-impact/studies/:innovationStudyId/actions
+GET /api/v1/curriculum-innovation-impact/summary
+POST /api/v1/curriculum-localization-fidelity/assessments
+POST /api/v1/curriculum-localization-fidelity/assessments/:localizationAssessmentId/actions
+GET /api/v1/curriculum-localization-fidelity/summary
+POST /api/v1/curriculum-micro-credential-alignment/assessments
+POST /api/v1/curriculum-micro-credential-alignment/assessments/:microCredentialAssessmentId/actions
+GET /api/v1/curriculum-micro-credential-alignment/summary
+POST /api/v1/curriculum-relevance/scans
+POST /api/v1/curriculum-relevance/scans/:relevanceScanId/actions
+GET /api/v1/curriculum-relevance/summary
+POST /api/v1/curriculum-resource-efficiency/audits
+POST /api/v1/curriculum-resource-efficiency/audits/:efficiencyAuditId/actions
+GET /api/v1/curriculum-resource-efficiency/summary
+POST /api/v1/curriculum-sequencing/analyses
+POST /api/v1/curriculum-sequencing/analyses/:sequencingAnalysisId/actions
+GET /api/v1/curriculum-sequencing/summary
+POST /api/v1/curriculum-skill-stack-stability/assessments
+POST /api/v1/curriculum-skill-stack-stability/assessments/:skillStackAssessmentId/actions
+GET /api/v1/curriculum-skill-stack-stability/summary
+POST /api/v1/curriculum-transferability-index/assessments
+POST /api/v1/curriculum-transferability-index/assessments/:transferabilityAssessmentId/actions
+GET /api/v1/curriculum-transferability-index/summary
+POST /api/v1/curriculum-vendor-exit-readiness/assessments
+POST /api/v1/curriculum-vendor-exit-readiness/assessments/:vendorExitAssessmentId/actions
+GET /api/v1/curriculum-vendor-exit-readiness/summary
+POST /api/v1/customer-success/accounts
+POST /api/v1/customer-success/accounts/:customerSuccessAccountId/refresh-health
+POST /api/v1/data-escrow/cases
+POST /api/v1/data-escrow/cases/:caseId/release
+POST /api/v1/data-governance/access-requests/:accessRequestId/approve
+POST /api/v1/data-governance/assets
+POST /api/v1/data-governance/retention-exceptions/:exceptionId/approve
+GET /api/v1/data-lineage/graphs
+POST /api/v1/data-lineage/nodes
+POST /api/v1/data-minimization/audits
+POST /api/v1/data-minimization/audits/:auditId/findings
+POST /api/v1/data-pipelines
+POST /api/v1/data-pipelines/:pipelineId/runs
+GET /api/v1/data-pipelines/runs/:pipelineRunId
+POST /api/v1/data-purpose/registries
+POST /api/v1/data-purpose/registries/:registryId/entries
+POST /api/v1/data-residency/policies
+POST /api/v1/data-residency/requests/:requestId/decide
+POST /api/v1/data-sharing/contracts
+POST /api/v1/data-sharing/contracts/:contractId/approvals
+POST /api/v1/data-signals
+POST /api/v1/data-signals/:signalId/subscriptions
+POST /api/v1/decision-appeals
+POST /api/v1/decision-appeals/:appealId/resolutions
+POST /api/v1/disputes
+POST /api/v1/disputes/:disputeId/resolutions
+POST /api/v1/edge-devices
+POST /api/v1/equity-access-resilience/runs
+POST /api/v1/equity-access-resilience/runs/:accessResilienceRunId/actions
+GET /api/v1/equity-access-resilience/summary
+POST /api/v1/equity-access-trajectory/audits
+POST /api/v1/equity-access-trajectory/audits/:accessTrajectoryAuditId/actions
+GET /api/v1/equity-access-trajectory/summary
+POST /api/v1/equity-counterfactuals
+POST /api/v1/equity-counterfactuals/:runId/insights
+POST /api/v1/equity-forecasts
+POST /api/v1/equity-forecasts/:forecastId/scenarios
+POST /api/v1/equity-gain-persistence/runs
+POST /api/v1/equity-gain-persistence/runs/:persistenceRunId/actions
+GET /api/v1/equity-gain-persistence/summary
+POST /api/v1/equity-gap-closure/runs
+POST /api/v1/equity-gap-closure/runs/:gapClosureRunId/actions
+GET /api/v1/equity-gap-closure/summary
+POST /api/v1/equity-intervention-precision/runs
+POST /api/v1/equity-intervention-precision/runs/:interventionPrecisionRunId/actions
+GET /api/v1/equity-intervention-precision/summary
+POST /api/v1/equity-intervention-resilience/runs
+POST /api/v1/equity-intervention-resilience/runs/:interventionResilienceRunId/actions
+GET /api/v1/equity-intervention-resilience/summary
+POST /api/v1/equity-intervention-roi/audits
+POST /api/v1/equity-intervention-roi/audits/:interventionRoiAuditId/actions
+GET /api/v1/equity-intervention-roi/summary
+POST /api/v1/equity-interventions/plans
+POST /api/v1/equity-interventions/plans/:planId/recommendations
+POST /api/v1/equity-momentum/runs
+POST /api/v1/equity-momentum/runs/:equityRunId/actions
+GET /api/v1/equity-momentum/summary
+POST /api/v1/equity-opportunity-index/runs
+POST /api/v1/equity-opportunity-index/runs/:opportunityRunId/actions
+GET /api/v1/equity-opportunity-index/summary
+POST /api/v1/equity-opportunity-resilience/runs
+POST /api/v1/equity-opportunity-resilience/runs/:opportunityResilienceRunId/actions
+GET /api/v1/equity-opportunity-resilience/summary
+POST /api/v1/equity-participation-elasticity/runs
+POST /api/v1/equity-participation-elasticity/runs/:participationElasticityRunId/actions
+GET /api/v1/equity-participation-elasticity/summary
+POST /api/v1/equity-participation-friction/runs
+POST /api/v1/equity-participation-friction/runs/:participationFrictionRunId/actions
+GET /api/v1/equity-participation-friction/summary
+POST /api/v1/equity-participation-opportunity-cost/runs
+POST /api/v1/equity-participation-opportunity-cost/runs/:opportunityCostRunId/actions
+GET /api/v1/equity-participation-opportunity-cost/summary
+POST /api/v1/equity-resource-efficiency/audits
+POST /api/v1/equity-resource-efficiency/audits/:resourceEfficiencyAuditId/actions
+GET /api/v1/equity-resource-efficiency/summary
+POST /api/v1/equity-resource-parity/audits
+POST /api/v1/equity-resource-parity/audits/:parityAuditId/actions
+GET /api/v1/equity-resource-parity/summary
+POST /api/v1/equity-response-efficacy/runs
+POST /api/v1/equity-response-efficacy/runs/:efficacyRunId/actions
+GET /api/v1/equity-response-efficacy/summary
+POST /api/v1/equity-root-cause-attribution/runs
+POST /api/v1/equity-root-cause-attribution/runs/:rootCauseRunId/actions
+GET /api/v1/equity-root-cause-attribution/summary
+POST /api/v1/equity-sentinels
+POST /api/v1/equity-sentinels/:sentinelId/signals
+POST /api/v1/equity-sustainability/runs
+POST /api/v1/equity-sustainability/runs/:sustainabilityRunId/actions
+GET /api/v1/equity-sustainability/summary
+POST /api/v1/ethics-council/cases
+POST /api/v1/ethics-council/cases/:caseId/decisions
+POST /api/v1/evidence/bundles
+POST /api/v1/evidence/bundles/:bundleId/attestations
+POST /api/v1/exams
+/api/v1/exams/${encodeURIComponent(ensureWorkspaceValue(workspace.exam_id,
+POST /api/v1/exams/:examId/mark-entries
+POST /api/v1/experience/events
+GET /api/v1/experience/timelines
+POST /api/v1/explainability-cases
+POST /api/v1/explainability-cases/:caseId/evidence
+GET /api/v1/facilities
+POST /api/v1/family-financial/profiles
+POST /api/v1/family-financial/profiles/:profileId/assessments
+POST /api/v1/family-sentiment/feedback
+POST /api/v1/family-sentiment/feedback/:feedbackId/actions
+GET /api/v1/family-sentiment/summary
+POST /api/v1/federated-analytics/queries
+POST /api/v1/federated-analytics/queries/:queryId/results
+POST /api/v1/federated-audit/packs
+POST /api/v1/federated-audit/packs/:packId/entries
+POST /api/v1/federated-learning/rounds
+POST /api/v1/federated-learning/rounds/:roundId/participants
+POST /api/v1/federated-policy/bundles
+POST /api/v1/federated-policy/bundles/:bundleId/enforcements
+POST /api/v1/federated-sandboxes
+POST /api/v1/federated-sandboxes/:sandboxId/approvals
+POST /api/v1/federation-benchmarks
+GET /api/v1/federation-benchmarks/:benchmarkId/insights
+POST /api/v1/federations
+POST /api/v1/federations/:federationId/members
+GET /api/v1/fee-plans
+POST /api/v1/feedback-authenticity-assurance/reviews
+POST /api/v1/feedback-authenticity-assurance/reviews/:authenticityReviewId/findings
+GET /api/v1/feedback-authenticity-assurance/summary
+POST /api/v1/feedback-authenticity-drift/reviews
+POST /api/v1/feedback-authenticity-drift/reviews/:authenticityDriftReviewId/findings
+GET /api/v1/feedback-authenticity-drift/summary
+POST /api/v1/feedback-signal-integrity/reviews
+POST /api/v1/feedback-signal-integrity/reviews/:signalIntegrityReviewId/findings
+GET /api/v1/feedback-signal-integrity/summary
+POST /api/v1/finance-forecast/tuition-scenarios
+POST /api/v1/finance-forecast/tuition-scenarios/:scenarioId/run
+POST /api/v1/governance-automation/policies
+POST /api/v1/governance-automation/policies/:policyId/runs
+/api/v1/governance/portfolio/events?${params.toString()}
+/api/v1/governance/portfolio/events?tenant_id=${encodeURIComponent(focusedTenantId)}
+/api/v1/governance/portfolio/events?tenant_id=${encodeURIComponent(workspace.tenant_id)}
+/api/v1/governance/portfolio/events?tenant_id=${encodeURIComponent(workspace.tenant_id)}&school_id=${encodeURIComponent(selectedSchoolId)}&limit=10
+/api/v1/governance/portfolio?tenant_id=${encodeURIComponent(workspace.tenant_id)}
+POST /api/v1/grade-levels
+POST /api/v1/guardian-advocacy/cases
+POST /api/v1/guardian-advocacy/cases/:caseId/escalations
+POST /api/v1/guardian-links
+POST /api/v1/identity-federations
+POST /api/v1/identity-federations/:federationId/links
+POST /api/v1/identity-proofing/sessions
+POST /api/v1/identity-proofing/sessions/:sessionId/decide
+POST /api/v1/identity-risk/profiles
+POST /api/v1/identity-risk/profiles/:profileId/mitigations
+POST /api/v1/identity-wallets
+POST /api/v1/identity-wallets/:walletId/credentials
+POST /api/v1/impact-assurance/cases
+POST /api/v1/impact-assurance/cases/:caseId/evidence
+POST /api/v1/inbox/:deliveryId/read
+POST /api/v1/incident-coordination/incidents
+POST /api/v1/incident-coordination/incidents/:incidentId/actions
+POST /api/v1/incident-evidence/cases
+POST /api/v1/incident-evidence/cases/:caseId/shares
+POST /api/v1/incident-signals
+POST /api/v1/incident-signals/:signalId/acknowledgements
+GET /api/v1/initiative-portfolio/health
+POST /api/v1/initiatives
+POST /api/v1/instructional-coaching/observations
+POST /api/v1/instructional-coaching/plans
+POST /api/v1/instructional-coaching/plans/:coachingPlanId/check-ins
+GET /api/v1/instructional-coaching/summary
+POST /api/v1/instructional-content-provenance/scans
+POST /api/v1/instructional-content-provenance/scans/:contentProvenanceScanId/findings
+GET /api/v1/instructional-content-provenance/summary
+POST /api/v1/instructional-safety/gates
+POST /api/v1/instructional-safety/gates/:gateId/blocks
+POST /api/v1/instructional-source-credibility-ledger/scans
+POST /api/v1/instructional-source-credibility-ledger/scans/:sourceCredibilityScanId/findings
+GET /api/v1/instructional-source-credibility-ledger/summary
+POST /api/v1/instructional-source-drift/scans
+POST /api/v1/instructional-source-drift/scans/:sourceDriftScanId/findings
+GET /api/v1/instructional-source-drift/summary
+POST /api/v1/instructional-workload/snapshots
+POST /api/v1/instructional-workload/snapshots/:workloadSnapshotId/adjustments
+GET /api/v1/instructional-workload/summary
+POST /api/v1/integration-hub/endpoints
+GET /api/v1/integration-hub/health
+POST /api/v1/integration-hub/health:refresh
+GET /api/v1/integration-hub/sla-drift
+POST /api/v1/integration-hub/sync-schedules
+POST /api/v1/integrity-cases
+POST /api/v1/integrity-cases/:caseId/actions
+POST /api/v1/interoperability/connections
+POST /api/v1/interoperability/connections/:connectionId/conformance-runs
+POST /api/v1/intervention-assurance/cases
+POST /api/v1/intervention-assurance/cases/:caseId/verifications
+POST /api/v1/intervention-attribution/runs
+POST /api/v1/intervention-attribution/runs/:attributionRunId/insights
+GET /api/v1/intervention-attribution/summary
+POST /api/v1/intervention-consent-freshness/audits
+POST /api/v1/intervention-consent-freshness/audits/:consentFreshnessAuditId/actions
+GET /api/v1/intervention-consent-freshness/summary
+GET /api/v1/invoices/:invoiceId
+POST /api/v1/key-escrow/escrows
+POST /api/v1/key-escrow/escrows/:escrowId/releases
+POST /api/v1/knowledge-fabric/nodes
+POST /api/v1/knowledge-fabric/queries
+POST /api/v1/knowledge-provenance/assets
+POST /api/v1/knowledge-provenance/assets/:assetId/entries
+POST /api/v1/knowledge/questions
+/api/v1/launch-governance/escalations/${encodeURIComponent(escalation.escalation_id)}/follow-up-actions
+/api/v1/launch-governance/escalations/${encodeURIComponent(escalation.escalation_id)}/notes
+/api/v1/launch-governance/escalations/${encodeURIComponent(escalationId)}/acknowledge
+/api/v1/launch-governance/escalations/${encodeURIComponent(escalationId)}/resolve
+/api/v1/launch-governance/escalations/${encodeURIComponent(escalationId)}?tenant_id=${encodeURIComponent(tenantId)}
+/api/v1/launch-governance/escalations/${encodeURIComponent(selectedEscalationId)}?tenant_id=${encodeURIComponent(workspace.tenant_id)}
+/api/v1/launch-governance/escalations?tenant_id=${encodeURIComponent(workspace.tenant_id)}&limit=20
+/api/v1/launch-governance/follow-up-actions/${encodeURIComponent(followUpActionId)}/complete
+/api/v1/launch-governance/summary?tenant_id=${encodeURIComponent(workspace.tenant_id)}
+/api/v1/launch-readiness/summary?tenant_id=${encodeURIComponent(workspace.tenant_id)}
+/api/v1/launch-readiness/summary?tenant_id=${encodeURIComponent(workspace.tenant_id)}&school_id=${encodeURIComponent(selectedSchoolId)}
+/api/v1/launch-readiness/sweeps
+POST /api/v1/learner-agency-drift/reviews
+POST /api/v1/learner-agency-drift/reviews/:agencyDriftReviewId/actions
+GET /api/v1/learner-agency-drift/summary
+POST /api/v1/learner-confidence-recovery-trajectory/runs
+POST /api/v1/learner-confidence-recovery-trajectory/runs/:confidenceRecoveryRunId/actions
+GET /api/v1/learner-confidence-recovery-trajectory/summary
+POST /api/v1/learner-confidence-volatility/reviews
+POST /api/v1/learner-confidence-volatility/reviews/:confidenceVolatilityReviewId/actions
+GET /api/v1/learner-confidence-volatility/summary
+POST /api/v1/learning-attention-recovery-index/reviews
+POST /api/v1/learning-attention-recovery-index/reviews/:attentionRecoveryReviewId/actions
+GET /api/v1/learning-attention-recovery-index/summary
+POST /api/v1/learning-attention-stability/reviews
+POST /api/v1/learning-attention-stability/reviews/:attentionStabilityReviewId/actions
+GET /api/v1/learning-attention-stability/summary
+POST /api/v1/learning-cognitive-load-stability/reviews
+POST /api/v1/learning-cognitive-load-stability/reviews/:loadStabilityReviewId/actions
+GET /api/v1/learning-cognitive-load-stability/summary
+POST /api/v1/learning-continuity-index/snapshots
+POST /api/v1/learning-continuity-index/snapshots/:continuitySnapshotId/actions
+GET /api/v1/learning-continuity-index/summary
+POST /api/v1/learning-durability/snapshots
+POST /api/v1/learning-durability/snapshots/:durabilitySnapshotId/actions
+GET /api/v1/learning-durability/summary
+POST /api/v1/learning-ecosystem-health/assessments
+POST /api/v1/learning-ecosystem-health/assessments/:ecosystemAssessmentId/actions
+GET /api/v1/learning-ecosystem-health/summary
+POST /api/v1/learning-engagement/forecasts
+POST /api/v1/learning-engagement/forecasts/:forecastId/actions
+GET /api/v1/learning-engagement/summary
+POST /api/v1/learning-exchange/packs
+POST /api/v1/learning-exchange/packs/:packId/policies
+POST /api/v1/learning-goals
+POST /api/v1/learning-goals/:goalId/progress
+GET /api/v1/learning-goals/summary
+GET /api/v1/learning-impact/portfolio
+POST /api/v1/learning-impact/studies
+POST /api/v1/learning-impact/studies/:impactStudyId/runs
+POST /api/v1/learning-intervention-burden/forecasts
+POST /api/v1/learning-intervention-burden/forecasts/:interventionBurdenForecastId/actions
+GET /api/v1/learning-intervention-burden/summary
+POST /api/v1/learning-mentorship-impact/studies
+POST /api/v1/learning-mentorship-impact/studies/:mentorshipStudyId/actions
+GET /api/v1/learning-mentorship-impact/summary
+POST /api/v1/learning-metacognition-index/runs
+POST /api/v1/learning-metacognition-index/runs/:metacognitionRunId/actions
+GET /api/v1/learning-metacognition-index/summary
+POST /api/v1/learning-orchestration/refresh
+GET /api/v1/learning-orchestration/runs
+POST /api/v1/learning-passports
+POST /api/v1/learning-passports/:passportId/entries
+POST /api/v1/learning-path-fidelity/runs
+POST /api/v1/learning-path-fidelity/runs/:fidelityRunId/actions
+GET /api/v1/learning-path-fidelity/summary
+POST /api/v1/learning-paths/:pathId/steps/:stepId/complete
+POST /api/v1/learning-paths/generate
+GET /api/v1/learning-pulse/events
+POST /api/v1/learning-pulse/events
+GET /api/v1/learning-pulse/students/:studentId/summary
+GET /api/v1/learning-pulse/summary
+POST /api/v1/learning-readiness/snapshots
+POST /api/v1/learning-readiness/snapshots/:snapshotId/actions
+GET /api/v1/learning-readiness/summary
+POST /api/v1/learning-record/evidence
+POST /api/v1/learning-record/mastery/compute
+POST /api/v1/learning-recovery-effectiveness/runs
+POST /api/v1/learning-recovery-effectiveness/runs/:recoveryEffectivenessRunId/actions
+GET /api/v1/learning-recovery-effectiveness/summary
+POST /api/v1/learning-recovery-velocity/runs
+POST /api/v1/learning-recovery-velocity/runs/:recoveryVelocityRunId/actions
+GET /api/v1/learning-recovery-velocity/summary
+POST /api/v1/learning-recovery/cases
+POST /api/v1/learning-recovery/cases/:recoveryCaseId/plans
+GET /api/v1/learning-recovery/summary
+POST /api/v1/learning-resilience/forecasts
+POST /api/v1/learning-resilience/forecasts/:resilienceForecastId/actions
+GET /api/v1/learning-resilience/summary
+POST /api/v1/learning-retention/forecasts
+POST /api/v1/learning-retention/forecasts/:retentionForecastId/actions
+GET /api/v1/learning-retention/summary
+POST /api/v1/learning-stability/snapshots
+POST /api/v1/learning-stability/snapshots/:stabilitySnapshotId/actions
+GET /api/v1/learning-stability/summary
+POST /api/v1/learning-support-capacity-forecast/forecasts
+POST /api/v1/learning-support-capacity-forecast/forecasts/:supportCapacityForecastId/actions
+GET /api/v1/learning-support-capacity-forecast/summary
+POST /api/v1/learning-support-latency/runs
+POST /api/v1/learning-support-latency/runs/:supportLatencyRunId/actions
+GET /api/v1/learning-support-latency/summary
+POST /api/v1/learning-trajectories
+POST /api/v1/learning-trajectories/:trajectoryId/checkpoints
+GET /api/v1/learning-trajectories/summary
+POST /api/v1/learning-transfer/analyses
+POST /api/v1/learning-transfer/analyses/:transferAnalysisId/actions
+GET /api/v1/learning-transfer/summary
+POST /api/v1/lesson-plan-fidelity/checks
+POST /api/v1/lesson-plan-fidelity/checks/:checkId/actions
+GET /api/v1/lesson-plan-fidelity/summary
+POST /api/v1/lesson-plans
+POST /api/v1/lesson-plans:draft
+GET /api/v1/library/books
+GET /api/v1/library/reservations
+POST /api/v1/market/forecasts
+POST /api/v1/market/segments
+POST /api/v1/marketplace/listings
+POST /api/v1/marketplace/orders
+POST /api/v1/mastery/snapshots/compute
+GET /api/v1/mastery/students/:studentId/latest
+POST /api/v1/model-evaluations/suites
+POST /api/v1/model-evaluations/suites/:suiteId/runs
+POST /api/v1/model-exchange/listings
+POST /api/v1/model-exchange/listings/:listingId/attestations
+POST /api/v1/model-forensics/cases
+POST /api/v1/model-forensics/cases/:caseId/snapshots
+POST /api/v1/model-lineage/chains
+POST /api/v1/model-lineage/chains/:chainId/links
+POST /api/v1/model-risk/profiles
+POST /api/v1/model-risk/profiles/:profileId/assessments
+POST /api/v1/model-usage/attestations
+POST /api/v1/model-usage/attestations/:attestationId/verifications
+POST /api/v1/mutual-aid/requests
+POST /api/v1/mutual-aid/requests/:requestId/offers
+POST /api/v1/notices
+/api/v1/onboarding/tenants
+POST /api/v1/onboarding/tenants
+GET /api/v1/onboarding/tenants/:tenantId
+POST /api/v1/operator-briefings
+GET /api/v1/operator-briefings/:briefingId
+GET /api/v1/outcome-ledger/entries
+POST /api/v1/outcome-ledger/entries
+POST /api/v1/outcome-verifications
+POST /api/v1/outcome-verifications/:verificationId/decide
+POST /api/v1/pathways
+GET /api/v1/pathways/:pathwayId/insights
+GET /api/v1/payroll/plans
+POST /api/v1/personalization-agency-preservation/runs
+POST /api/v1/personalization-agency-preservation/runs/:agencyPreservationRunId/actions
+GET /api/v1/personalization-agency-preservation/summary
+POST /api/v1/personalization-consent-fidelity/reviews
+POST /api/v1/personalization-consent-fidelity/reviews/:consentFidelityReviewId/actions
+GET /api/v1/personalization-consent-fidelity/summary
+POST /api/v1/personalization-context-stability/reviews
+POST /api/v1/personalization-context-stability/reviews/:contextStabilityReviewId/actions
+GET /api/v1/personalization-context-stability/summary
+POST /api/v1/personalization-ethics/reviews
+POST /api/v1/personalization-ethics/reviews/:ethicsReviewId/actions
+GET /api/v1/personalization-ethics/summary
+POST /api/v1/personalization-explanation-clarity/reviews
+POST /api/v1/personalization-explanation-clarity/reviews/:explanationClarityReviewId/actions
+GET /api/v1/personalization-explanation-clarity/summary
+POST /api/v1/personalization-feedback-loop/cycles
+POST /api/v1/personalization-feedback-loop/cycles/:feedbackCycleId/actions
+GET /api/v1/personalization-feedback-loop/summary
+POST /api/v1/personalization-governance/reviews
+POST /api/v1/personalization-governance/reviews/:governanceReviewId/actions
+GET /api/v1/personalization-governance/summary
+POST /api/v1/personalization-human-loop-assurance/reviews
+POST /api/v1/personalization-human-loop-assurance/reviews/:humanLoopReviewId/actions
+GET /api/v1/personalization-human-loop-assurance/summary
+POST /api/v1/personalization-impact-explainability/reviews
+POST /api/v1/personalization-impact-explainability/reviews/:impactExplainabilityReviewId/actions
+GET /api/v1/personalization-impact-explainability/summary
+POST /api/v1/personalization-impact/studies
+POST /api/v1/personalization-impact/studies/:personalizationImpactId/actions
+GET /api/v1/personalization-impact/summary
+POST /api/v1/personalization-intent-alignment/reviews
+POST /api/v1/personalization-intent-alignment/reviews/:intentAlignmentReviewId/actions
+GET /api/v1/personalization-intent-alignment/summary
+POST /api/v1/personalization-intervention-handoff/cycles
+POST /api/v1/personalization-intervention-handoff/cycles/:handoffCycleId/actions
+GET /api/v1/personalization-intervention-handoff/summary
+POST /api/v1/personalization-overfit-guard/reviews
+POST /api/v1/personalization-overfit-guard/reviews/:overfitReviewId/actions
+GET /api/v1/personalization-overfit-guard/summary
+POST /api/v1/personalization-rationale-accuracy/reviews
+POST /api/v1/personalization-rationale-accuracy/reviews/:rationaleAccuracyReviewId/actions
+GET /api/v1/personalization-rationale-accuracy/summary
+POST /api/v1/personalization-rationale-lineage/reviews
+POST /api/v1/personalization-rationale-lineage/reviews/:rationaleLineageReviewId/actions
+GET /api/v1/personalization-rationale-lineage/summary
+POST /api/v1/personalization-transparency/reviews
+POST /api/v1/personalization-transparency/reviews/:transparencyReviewId/actions
+GET /api/v1/personalization-transparency/summary
+POST /api/v1/personalization-trust-signal/snapshots
+POST /api/v1/personalization-trust-signal/snapshots/:trustSignalSnapshotId/actions
+GET /api/v1/personalization-trust-signal/summary
+POST /api/v1/personalization-uptake/snapshots
+POST /api/v1/personalization-uptake/snapshots/:uptakeSnapshotId/actions
+GET /api/v1/personalization-uptake/summary
+/api/v1/plans?tenant_id=${encodeURIComponent(workspace.tenant_id)}
+GET /api/v1/platform/data-integrity/report?tenant_id=...
+/api/v1/platform/manifest
+/api/v1/platform/runtime
+GET /api/v1/platform/runtime
+GET /api/v1/playbook-runs/:playbookRunId
+POST /api/v1/playbooks
+POST /api/v1/playbooks/:playbookId/runs
+POST /api/v1/playbooks/integration-drift:run
+POST /api/v1/playbooks/seed/integration-drift
+POST /api/v1/policies
+POST /api/v1/policy-attestations
+POST /api/v1/policy-attestations/:attestationId/void
+POST /api/v1/policy-compiler/policies
+POST /api/v1/policy-compiler/policies/:policyId/compile
+POST /api/v1/policy-drift/detectors
+POST /api/v1/policy-drift/detectors/:detectorId/alerts
+POST /api/v1/policy-exceptions
+POST /api/v1/policy-exceptions/:exceptionId/reviews
+POST /api/v1/policy-lab/simulations
+POST /api/v1/policy-lab/simulations/:simulationId/runs
+POST /api/v1/portfolio-benchmarks
+POST /api/v1/portfolio-benchmarks/:benchmarkId/insights
+GET /api/v1/portfolio/scenarios
+POST /api/v1/portfolio/scenarios
+/api/v1/principals
+POST /api/v1/principals
+/api/v1/principals/${encodeURIComponent(authState.principal_id)}/access-scopes?tenant_id=${encodeURIComponent(authState.tenant_id)}
+/api/v1/principals/${encodeURIComponent(createdPrincipal.principal_id)}/roles/${encodeURIComponent(roleId)}
+/api/v1/principals/${encodeURIComponent(ensureWorkspaceValue(workspace.principal_id,
+/api/v1/principals/${encodeURIComponent(principal.principal_id)}
+/api/v1/principals/${encodeURIComponent(principal.principal_id)}/password:reset
+/api/v1/principals/${encodeURIComponent(principal.principal_id)}/roles/${encodeURIComponent(role.role_id)}
+/api/v1/principals/${encodeURIComponent(principalId)}/access-scopes?tenant_id=${encodeURIComponent(safeTenantId)}
+/api/v1/principals/${encodeURIComponent(principalId)}/roles/${encodeURIComponent(role.role_id)}
+/api/v1/principals/${encodeURIComponent(principalId)}/roles/${encodeURIComponent(role.role_id)}/revoke
+/api/v1/principals/${encodeURIComponent(principalId)}/roles?tenant_id=${encodeURIComponent(safeTenantId)}
+/api/v1/principals/${encodeURIComponent(principalId)}/sessions
+/api/v1/principals/${encodeURIComponent(selectedOwner.principal_id)}/owner-lifecycle
+/api/v1/principals/${encodeURIComponent(selectedPrincipal.principal_id)}
+/api/v1/principals/${encodeURIComponent(selectedPrincipal.principal_id)}/password:reset
+/api/v1/principals/${encodeURIComponent(selectedPrincipal.principal_id)}/roles/${encodeURIComponent(String(formData.get(
+/api/v1/principals/${encodeURIComponent(selectedPrincipal.principal_id)}/roles/${encodeURIComponent(role.role_id)}/revoke
+/api/v1/principals/${encodeURIComponent(selectedPrincipal.principal_id)}/sessions/revoke-all
+/api/v1/principals/${encodeURIComponent(selectedPrincipal.principal_id)}/sessions/revoke-others
+PATCH /api/v1/principals/:principalId
+GET /api/v1/principals/:principalId/access-scopes
+GET /api/v1/principals/:principalId/children
+POST /api/v1/principals/:principalId/owner-lifecycle
+POST /api/v1/principals/:principalId/owner-login:unlock
+POST /api/v1/principals/:principalId/password:reset
+/api/v1/principals/:principalId/roles/:roleId
+POST /api/v1/principals/:principalId/roles/:roleId
+/api/v1/principals/:principalId/roles/:roleId/revoke
+POST /api/v1/principals/:principalId/roles/:roleId/revoke
+GET /api/v1/principals/:principalId/sessions
+POST /api/v1/principals/:principalId/sessions/revoke-all
+POST /api/v1/principals/:principalId/sessions/revoke-others
+/api/v1/principals?tenant_id=${encodeURIComponent(workspace.tenant_id)}&limit=200
+POST /api/v1/privacy-attacks/simulations
+POST /api/v1/privacy-attacks/simulations/:simulationId/findings
+POST /api/v1/privacy-budgets
+POST /api/v1/privacy-budgets/:budgetId/spend
+POST /api/v1/procurement-optimizer/runs
+POST /api/v1/procurement-optimizer/runs/:runId/optimize
+GET /api/v1/procurement/requisitions
+/api/v1/public/tenants/${encodeURIComponent(tenantCode)}/schools/${encodeURIComponent(schoolCode)}/login-context
+/api/v1/public/tenants/:tenantCode/schools/:schoolCode/login-context
+POST /api/v1/question-bank/items
+GET /api/v1/question-bank/items/:questionItemId
+POST /api/v1/question-bank/items:draft
+GET /api/v1/realtime/alerts
+POST /api/v1/realtime/streams
+POST /api/v1/record-bridge/requests
+POST /api/v1/record-bridge/requests/:requestId/approve
+POST /api/v1/registrar/graduation-applications/:applicationId/decide
+POST /api/v1/registrar/programs
+POST /api/v1/registrar/registrations
+POST /api/v1/regulatory-change/scans
+POST /api/v1/regulatory-change/scans/:scanId/impacts
+POST /api/v1/regulatory-intelligence/regulations
+POST /api/v1/regulatory-intelligence/regulations/:regulationId/impacts
+POST /api/v1/regulatory-sandboxes/requests
+POST /api/v1/regulatory-sandboxes/requests/:requestId/approvals
+POST /api/v1/regulatory/filings
+POST /api/v1/regulatory/filings/:filingId/submit
+POST /api/v1/remediation/suggestions/:suggestionId/accept
+POST /api/v1/remediation/suggestions/generate
+POST /api/v1/report-cards
+POST /api/v1/report-cards/:reportCardId/publish
+/api/v1/report-exports
+GET /api/v1/report-exports
+/api/v1/report-exports/${encodeURIComponent(reportExport.export_id)}
+/api/v1/report-exports?${exportParams.toString()}
+/api/v1/report-exports?tenant_id=${encodeURIComponent(ensureWorkspaceValue(workspace.tenant_id,
+/api/v1/report-schedules
+/api/v1/report-schedules/${encodeURIComponent(scheduleId)}/run
+/api/v1/report-schedules/run-due
+/api/v1/report-schedules?${scheduleParams.toString()}
+/api/v1/report-schedules?tenant_id=${encodeURIComponent(ensureWorkspaceValue(workspace.tenant_id,
+/api/v1/reports/academic-mis?${params.toString()}
+/api/v1/reports/campuses/${encodeURIComponent(ensureWorkspaceValue(workspace.campus_id,
+/api/v1/reports/finance-mis?${financeScope.toString()}
+/api/v1/reports/finance-mis?${params.toString()}
+/api/v1/reports/finance-mis?tenant_id=${encodeURIComponent(tenantId)}
+GET /api/v1/reports/operator-dashboard
+GET /api/v1/reports/operator-dashboard/trends
+/api/v1/reports/operator-dashboard?tenant_id=${encodeURIComponent(ensureWorkspaceValue(workspace.tenant_id,
+/api/v1/reports/operator-dashboard?tenant_id=${encodeURIComponent(focusedTenantId)}
+/api/v1/reports/operator-dashboard?tenant_id=${encodeURIComponent(workspace.tenant_id)}
+/api/v1/reports/ops-alerts?${params.toString()}
+/api/v1/reports/schools/${encodeURIComponent(ensureWorkspaceValue(workspace.school_id,
+/api/v1/reports/schools/${encodeURIComponent(selectedSchoolId)}/dashboard?tenant_id=${encodeURIComponent(workspace.tenant_id)}
+POST /api/v1/resilience/plans
+POST /api/v1/resilience/plans/:planId/exercises
+POST /api/v1/revocations/lists
+POST /api/v1/revocations/lists/:listId/entries
+POST /api/v1/rights/requests
+POST /api/v1/rights/requests/:requestId/actions
+POST /api/v1/risk/registers
+GET /api/v1/risk/registers/:registerId/insights
+/api/v1/roles
+POST /api/v1/roles
+/api/v1/roles/${encodeURIComponent(role.role_id)}/permissions
+POST /api/v1/roles/:roleId/permissions
+/api/v1/roles?tenant_id=${encodeURIComponent(workspace.tenant_id)}
+POST /api/v1/rubrics
+POST /api/v1/rubrics/:rubricId/versions
+POST /api/v1/safety-command/incidents
+POST /api/v1/safety-command/readiness
+POST /api/v1/safety-risk/cases
+POST /api/v1/safety-risk/cases/:caseId/responses
+POST /api/v1/safety-triage/cases
+POST /api/v1/safety-triage/cases/:caseId/recommendations
+GET /api/v1/safety/drills
+/api/v1/school-launch/checklists
+/api/v1/school-launch/portfolio?tenant_id=${encodeURIComponent(workspace.tenant_id)}
+/api/v1/schools
+POST /api/v1/schools
+/api/v1/schools/${encodeURIComponent(ensureWorkspaceValue(workspace.school_id,
+/api/v1/schools/${encodeURIComponent(selectedSchoolId)}/launch-checklists?tenant_id=${encodeURIComponent(workspace.tenant_id)}&limit=20
+/api/v1/schools?${params.toString()}
+/api/v1/schools?tenant_id=${encodeURIComponent(workspace.tenant_id)}
+GET /api/v1/search/documents
+/api/v1/sessions/${encodeURIComponent(authState.session_id)}/scope:select
+/api/v1/sessions/${encodeURIComponent(authState.session_id)}/step-up
+/api/v1/sessions/${encodeURIComponent(authState.session_id)}/step-up:challenge
+/api/v1/sessions/${encodeURIComponent(session.session_id)}
+/api/v1/sessions/${encodeURIComponent(sessionId)}
+POST /api/v1/sessions/7784a807-8bb1-43cd-b04c-e743eb549bba/step-up
+DELETE /api/v1/sessions/:sessionId
+POST /api/v1/sessions/:sessionId/scope:select
+POST /api/v1/sessions/:sessionId/step-up
+POST /api/v1/sessions/:sessionId/step-up:challenge
+/api/v1/sessions/refresh
+POST /api/v1/simulation/approvals
+POST /api/v1/simulation/approvals/run-due
+POST /api/v1/simulation/comparisons
+GET /api/v1/simulation/governance/briefings
+POST /api/v1/simulation/governance/briefings
+POST /api/v1/simulation/governance/briefings/:briefingId/exports
+GET /api/v1/simulation/governance/control-tower
+GET /api/v1/simulation/governance/monitor-runs
+GET /api/v1/simulation/governance/monitors
+POST /api/v1/simulation/governance/monitors
+POST /api/v1/simulation/governance/monitors/:monitorId/run
+POST /api/v1/simulation/governance/monitors/run-due
+POST /api/v1/simulation/governance/outliers/:runId/triage
+GET /api/v1/simulation/governance/playbooks
+POST /api/v1/simulation/governance/playbooks
+POST /api/v1/simulation/governance/playbooks/:playbookId/activate
+POST /api/v1/simulation/governance/playbooks/:playbookId/outcomes
+GET /api/v1/simulation/governance/playbooks/effectiveness
+GET /api/v1/simulation/governance/portfolio
+GET /api/v1/simulation/governance/response-scorecards
+POST /api/v1/simulation/governance/response-scorecards/exports
+GET /api/v1/simulation/governance/risk-heatmap
+GET /api/v1/simulation/governance/risk-outliers
+GET /api/v1/simulation/governance/risk-trends
+POST /api/v1/simulation/policies
+POST /api/v1/simulation/policies/:policyId/assign-default
+POST /api/v1/simulation/policies/:policyId/versions
+GET /api/v1/simulation/policy-assignments
+GET /api/v1/simulation/policy-evaluations
+POST /api/v1/simulation/scenarios/:scenarioId/batches
+POST /api/v1/simulation/templates
+POST /api/v1/sovereign-ai/models
+POST /api/v1/sovereign-ai/models/:modelId/approve
+POST /api/v1/sovereign-audit/requests
+POST /api/v1/sovereign-audit/requests/:requestId/decisions
+POST /api/v1/sovereign-billing/contracts
+POST /api/v1/sovereign-billing/contracts/:contractId/statements
+POST /api/v1/sovereign-transfers/requests
+POST /api/v1/sovereign-transfers/requests/:requestId/decisions
+/api/v1/staff
+POST /api/v1/staff
+/api/v1/staff-assignments/${encodeURIComponent(assignmentId)}
+/api/v1/staff-assignments/${encodeURIComponent(assignmentId)}/${operation}
+GET /api/v1/staff-attendance/records
+/api/v1/staff/${encodeURIComponent(ensureWorkspaceValue(workspace.staff_id,
+POST /api/v1/staff/:staffId/assignments
+/api/v1/staff?${staffParams.toString()}
+POST /api/v1/standards/:standardId/links
+POST /api/v1/standards/frameworks
+POST /api/v1/student-agency/reflections
+POST /api/v1/student-agency/reflections/:reflectionId/actions
+GET /api/v1/student-agency/summary
+POST /api/v1/student-success/cohorts
+POST /api/v1/student-success/intervention-plans
+POST /api/v1/student-voice/feedback
+POST /api/v1/student-voice/feedback/:feedbackId/actions
+GET /api/v1/student-voice/summary
+GET /api/v1/students/:studentId/attendance
+POST /api/v1/students/:studentId/support-plans
+GET /api/v1/students/:studentId/timetable
+POST /api/v1/students/from-application
+POST /api/v1/supply-chain/disruption-scenarios
+POST /api/v1/supply-chain/vendors
+POST /api/v1/support-plans/:planId/progress-logs
+POST /api/v1/support-tickets
+POST /api/v1/support-tickets/:ticketId/resolve
+POST /api/v1/sustainability/records
+POST /api/v1/sustainability/reports
+POST /api/v1/synthetic-data/requests
+POST /api/v1/synthetic-data/requests/:requestId/approvals
+/api/v1/tasks/automation/from-alerts
+GET /api/v1/tasks?tenant_id=...&school_id=...
+/api/v1/tenant-billing/contracts
+/api/v1/tenant-billing/contracts?${contractParams.toString()}
+/api/v1/tenant-billing/contracts?tenant_id=${encodeURIComponent(tenantId)}&limit=100
+/api/v1/tenant-billing/statements
+/api/v1/tenant-billing/statements/${encodeURIComponent(statement.tenant_billing_statement_id)}
+/api/v1/tenant-billing/statements/${encodeURIComponent(statementId)}/settle
+/api/v1/tenant-billing/statements?${statementParams.toString()}
+/api/v1/tenant-metering/snapshots
+/api/v1/tenant-metering/usage?${usageParams.toString()}
+/api/v1/tenant-metering/usage?tenant_id=${encodeURIComponent(ensureWorkspaceValue(workspace.tenant_id,
+/api/v1/tenants
+POST /api/v1/tenants
+/api/v1/tenants/${encodeURIComponent(tenantId)}
+/api/v1/tenants/${encodeURIComponent(tenantId)}/features/${encodeURIComponent(featureKey)}/disable
+/api/v1/tenants/${encodeURIComponent(tenantId)}/features/${encodeURIComponent(featureKey)}/enable
+/api/v1/tenants/${encodeURIComponent(tenantId)}/recovery-checklist:sign-off
+/api/v1/tenants/${encodeURIComponent(workspace.tenant_id)}
+/api/v1/tenants/${encodeURIComponent(workspace.tenant_id)}/school-leadership-coverage
+/api/v1/tenants/${encodeURIComponent(workspace.tenant_id)}/school-login-posture
+/api/v1/tenants/${encodeURIComponent(workspace.tenant_id)}/session-security
+PATCH /api/v1/tenants/:tenantId
+POST /api/v1/tenants/:tenantId/features/:featureKey/disable
+POST /api/v1/tenants/:tenantId/features/:featureKey/enable
+POST /api/v1/tenants/:tenantId/recovery-checklist:sign-off
+GET /api/v1/tenants/:tenantId/school-leadership-coverage
+GET /api/v1/tenants/:tenantId/school-login-posture
+GET /api/v1/tenants/:tenantId/session-security
+POST /api/v1/threat-intel/feeds
+POST /api/v1/threat-intel/feeds/:feedId/events
+POST /api/v1/timetable-entries
+POST /api/v1/transparency/reports
+POST /api/v1/transparency/reports/:transparencyReportId/disclosures
+GET /api/v1/transparency/summary
+GET /api/v1/transport/control-tower/board
+GET /api/v1/transport/vehicles
+POST /api/v1/trust-calibrations
+POST /api/v1/trust-calibrations/:calibrationId/runs
+POST /api/v1/trust-frameworks
+POST /api/v1/trust-frameworks/:frameworkId/controls
+POST /api/v1/trust-radars
+POST /api/v1/trust-radars/:radarId/detections
+POST /api/v1/trust-repairs
+POST /api/v1/trust-repairs/:repairId/actions
+POST /api/v1/trust-signal/sources
+POST /api/v1/trust-signal/sources/:sourceId/fusions
+POST /api/v1/trust/scores
+POST /api/v1/trust/scores/:scoreId/signals
+GET /api/v1/vendors
+POST /api/v1/verifiable-claims
+POST /api/v1/verifiable-claims/:claimId/disclosures
+POST /api/v1/wellbeing-forecasts
+POST /api/v1/wellbeing-forecasts/:forecastId/alerts
+POST /api/v1/wellbeing/check-ins
+POST /api/v1/wellbeing/check-ins/:wellbeingCheckinId/actions
+GET /api/v1/wellbeing/summary
+POST /api/v1/workforce/forecasts
+POST /api/v1/workforce/recommendations
+POST /api/v1/zero-trust/grants
+POST /api/v1/zero-trust/grants/:grantId/checks
+POST /api/v1/zk-credentials
+POST /api/v1/zk-credentials/:credentialId/proofs

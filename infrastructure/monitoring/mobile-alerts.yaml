@@ -1,0 +1,207 @@
+---
+# Mobile App Monitoring - Alert Policies
+# Generated for Week 5 PR #12 DevOps CI/CD
+
+alert_policies:
+  - name: mobile_crash_rate_high
+    display_name: "Mobile: Crash Rate > 1%"
+    documentation:
+      content: |
+        Alert triggered when mobile app crash rate exceeds 1%.
+        This indicates a critical issue in the app that needs immediate attention.
+        
+        **Action:**
+        1. Check recent deployments in TestFlight/Play Store
+        2. Review crash logs in Firebase Crashlytics
+        3. Rollback recent deployment if necessary
+    conditions:
+      - condition_threshold:
+          filter: 'metric.type="custom.googleapis.com/mobile/crash_rate" resource.type="app"'
+          duration: 300s
+          comparison: COMPARISON_GT
+          threshold_value: 1.0  # 1%
+          aggregations:
+            - alignment_period: 60s
+              per_series_aligner: ALIGN_MEAN
+    notification_channels:
+      - devops-slack-channel
+      - devops-pagerduty
+    severity: "CRITICAL"
+
+  - name: mobile_api_error_rate_high
+    display_name: "Mobile: API Error Rate > 0.1%"
+    documentation:
+      content: |
+        Alert when API error rate from mobile clients exceeds 0.1%.
+        This may indicate backend issues or mobile network problems.
+        
+        **Action:**
+        1. Check backend API server health
+        2. Review error logs for patterns
+        3. Check network connectivity metrics
+    conditions:
+      - condition_threshold:
+          filter: 'metric.type="loadbalancing.googleapis.com/https/request_count" resource.type="https_lb_rule" metric.response_code_class="500"'
+          duration: 300s
+          comparison: COMPARISON_GT
+          threshold_value: 0.1  # 0.1%
+          aggregations:
+            - alignment_period: 60s
+              per_series_aligner: ALIGN_MEAN
+    notification_channels:
+      - devops-slack-channel
+      - backend-team-pagerduty
+    severity: "HIGH"
+
+  - name: mobile_latency_p95_high
+    display_name: "Mobile: API Latency p95 > 400ms"
+    documentation:
+      content: |
+        Alert when 95th percentile API latency from mobile exceeds 400ms.
+        This indicates degraded API performance affecting user experience.
+        
+        **Action:**
+        1. Check backend service CPU/memory usage
+        2. Review database query performance
+        3. Check network latency
+    conditions:
+      - condition_threshold:
+          filter: 'metric.type="loadbalancing.googleapis.com/https/request_latencies" resource.type="https_lb_rule" metadata.user_labels."source"="mobile"'
+          duration: 300s
+          comparison: COMPARISON_GT
+          threshold_value: 400  # milliseconds
+          aggregations:
+            - alignment_period: 60s
+              per_series_aligner: ALIGN_PERCENTILE_95
+    notification_channels:
+      - devops-slack-channel
+      - backend-team-pagerduty
+    severity: "HIGH"
+
+  - name: mobile_startup_time_slow
+    display_name: "Mobile: App Startup Time > 5 seconds"
+    documentation:
+      content: |
+        Alert when median app startup time exceeds 5 seconds.
+        This indicates performance degradation on the mobile app.
+        
+        **Action:**
+        1. Profile app startup with Xcode/Android Studio
+        2. Check for bloocking I/O operations
+        3. Review recent code changes
+    conditions:
+      - condition_threshold:
+          filter: 'metric.type="custom.googleapis.com/mobile/startup_time" resource.type="app"'
+          duration: 300s
+          comparison: COMPARISON_GT
+          threshold_value: 5000  # milliseconds
+          aggregations:
+            - alignment_period: 60s
+              per_series_aligner: ALIGN_PERCENTILE_50
+    notification_channels:
+      - frontend-team-slack
+    severity: "MEDIUM"
+
+  - name: mobile_network_error_spike
+    display_name: "Mobile: Network Errors Spike"
+    documentation:
+      content: |
+        Alert when network error rate spikes (>5x normal baseline).
+        This may indicate network infrastructure issues or user connectivity problems.
+        
+        **Action:**
+        1. Check CDN status
+        2. Review DNS resolution times
+        3. Check ISP BGP announcements
+    conditions:
+      - condition_threshold:
+          filter: 'metric.type="custom.googleapis.com/mobile/network_errors" resource.type="app"'
+          duration: 300s
+          comparison: COMPARISON_GT
+          threshold_value: 50  # errors per minute (baseline is ~10)
+          aggregations:
+            - alignment_period: 60s
+              per_series_aligner: ALIGN_RATE
+    notification_channels:
+      - devops-slack-channel
+    severity: "HIGH"
+
+  - name: mobile_session_abandonment_high
+    display_name: "Mobile: Session Abandonment Rate > 15%"
+    documentation:
+      content: |
+        Alert when session abandonment rate exceeds 15%.
+        This indicates users are dropping off, possibly due to crashes or performance issues.
+        
+        **Action:**
+        1. Check crash rate metrics
+        2. Review app stability metrics
+        3. Check user feedback/ratings
+    conditions:
+      - condition_threshold:
+          filter: 'metric.type="custom.googleapis.com/mobile/session_abandonment_rate" resource.type="app"'
+          duration: 600s
+          comparison: COMPARISON_GT
+          threshold_value: 15.0  # 15%
+          aggregations:
+            - alignment_period: 300s
+              per_series_aligner: ALIGN_MEAN
+    notification_channels:
+      - product-team-slack
+      - frontend-team-pagerduty
+    severity: "HIGH"
+
+  - name: mobile_battery_drain_high
+    display_name: "Mobile: Battery Drain Excessive"
+    documentation:
+      content: |
+        Alert when battery drain rate becomes excessive (>5% per hour).
+        This indicates the app may have runaway background tasks or improper resource management.
+        
+        **Action:**
+        1. Profile background activity with Xcode Instruments
+        2. Check for unnecessary location/Bluetooth access
+        3. Review networking/CPU tasks
+    conditions:
+      - condition_threshold:
+          filter: 'metric.type="custom.googleapis.com/mobile/battery_drain" resource.type="app"'
+          duration: 600s
+          comparison: COMPARISON_GT
+          threshold_value: 5.0  # % per hour
+          aggregations:
+            - alignment_period: 300s
+              per_series_aligner: ALIGN_MEAN
+    notification_channels:
+      - frontend-team-slack
+    severity: "MEDIUM"
+
+notification_channels:
+  devops-slack-channel:
+    type: slack
+    labels:
+      channel_name: "#devops-alerts"
+      
+  devops-pagerduty:
+    type: pagerduty
+    labels:
+      service_key: $PAGERDUTY_DEVOPS_SERVICE_KEY
+      
+  backend-team-pagerduty:
+    type: pagerduty
+    labels:
+      service_key: $PAGERDUTY_BACKEND_SERVICE_KEY
+      
+  frontend-team-slack:
+    type: slack
+    labels:
+      channel_name: "#frontend-alerts"
+      
+  frontend-team-pagerduty:
+    type: pagerduty
+    labels:
+      service_key: $PAGERDUTY_FRONTEND_SERVICE_KEY
+      
+  product-team-slack:
+    type: slack
+    labels:
+      channel_name: "#product-alerts"

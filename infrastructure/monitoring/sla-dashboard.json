@@ -1,0 +1,206 @@
+{
+  "displayName": "SLA Dashboard - Real-time Service Level",
+  "mosaicLayout": {
+    "columns": 12,
+    "tiles": [
+      {
+        "width": 3,
+        "height": 3,
+        "widget": {
+          "title": "Overall Uptime (30 Days)",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "resource.type=\"uptime_url\" metric.type=\"monitoring.googleapis.com/uptime_check/check_passed\"",
+                "aggregation": {
+                  "alignmentPeriod": "2592000s",
+                  "perSeriesAligner": "ALIGN_FRACTION_TRUE"
+                }
+              }
+            },
+            "sparkChartView": {
+              "sparkChartType": "SPARK_BAR"
+            },
+            "thresholds": [
+              { "value": 0.995, "direction": "ABOVE" },  // 99.5% SLA
+              { "value": 0.99, "direction": "BELOW" }
+            ]
+          }
+        }
+      },
+      {
+        "xPos": 3,
+        "width": 3,
+        "height": 3,
+        "widget": {
+          "title": "API Availability (7 Days)",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "resource.type=\"api\" metric.type=\"serviceruntime.googleapis.com/api/producer/total_latencies\"",
+                "aggregation": {
+                  "alignmentPeriod": "604800s",
+                  "perSeriesAligner": "ALIGN_FRACTION_TRUE"
+                }
+              }
+            },
+            "sparkChartView": {
+              "sparkChartType": "SPARK_BAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "width": 3,
+        "height": 3,
+        "widget": {
+          "title": "Error Rate Target",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "metric.type=\"loadbalancing.googleapis.com/https/request_count\" metric.response_code_class=\"500\"",
+                "aggregation": {
+                  "alignmentPeriod": "3600s",
+                  "perSeriesAligner": "ALIGN_MEAN"
+                }
+              }
+            },
+            "thresholds": [
+              { "value": 0.001, "direction": "BELOW" }  // < 0.1%
+            ]
+          }
+        }
+      },
+      {
+        "xPos": 9,
+        "width": 3,
+        "height": 3,
+        "widget": {
+          "title": "Latency p95 Target",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "metric.type=\"loadbalancing.googleapis.com/https/request_latencies\"",
+                "aggregation": {
+                  "alignmentPeriod": "3600s",
+                  "perSeriesAligner": "ALIGN_PERCENTILE_95"
+                }
+              }
+            },
+            "thresholds": [
+              { "value": 400, "direction": "BELOW", "color": "GREEN" }  // < 400ms
+            ]
+          }
+        }
+      },
+      {
+        "yPos": 3,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Uptime Trend (30 Days)",
+          "xyChart": {
+            "chartOptions": { "mode": "COLOR" },
+            "timeSeries": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"uptime_url\" metric.type=\"monitoring.googleapis.com/uptime_check/check_passed\"",
+                    "aggregation": {
+                      "alignmentPeriod": "86400s",
+                      "perSeriesAligner": "ALIGN_FRACTION_TRUE"
+                    }
+                  }
+                },
+                "plotType": "LINE",
+                "targetAxis": "Y1"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 3,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Error Rate Trend (7 Days)",
+          "xyChart": {
+            "chartOptions": { "mode": "COLOR" },
+            "timeSeries": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"loadbalancing.googleapis.com/https/request_count\" metric.response_code_class=\"500\"",
+                    "aggregation": {
+                      "alignmentPeriod": "3600s",
+                      "perSeriesAligner": "ALIGN_MEAN"
+                    }
+                  }
+                },
+                "plotType": "STACKED_AREA",
+                "targetAxis": "Y1"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "yPos": 7,
+        "width": 12,
+        "height": 5,
+        "widget": {
+          "title": "API Latency Percentiles (Real-time)",
+          "xyChart": {
+            "chartOptions": {
+              "mode": "COLOR"
+            },
+            "timeSeries": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"loadbalancing.googleapis.com/https/request_latencies\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_PERCENTILE_50"
+                    }
+                  }
+                },
+                "plotType": "LINE",
+                "targetAxis": "Y1"
+              },
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"loadbalancing.googleapis.com/https/request_latencies\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_PERCENTILE_95"
+                    }
+                  }
+                },
+                "plotType": "LINE",
+                "targetAxis": "Y1"
+              },
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"loadbalancing.googleapis.com/https/request_latencies\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_PERCENTILE_99"
+                    }
+                  }
+                },
+                "plotType": "LINE",
+                "targetAxis": "Y1"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

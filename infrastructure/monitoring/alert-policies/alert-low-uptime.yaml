@@ -1,0 +1,15 @@
+displayName: "Low Uptime Alert (<99.9%)"
+conditions:
+  - displayName: "Uptime below 99.9%"
+    conditionThreshold:
+      filter: 'metric.type="monitoring.googleapis.com/uptime_check/check_passed"'
+      comparison: COMPARISON_LT
+      thresholdValue: 0.999
+      duration: "60s"
+      aggregations:
+        - alignmentPeriod: "60s"
+          perSeriesAligner: "ALIGN_FRACTION_TRUE"
+notificationChannels: []
+alertStrategy:
+  autoClose: "600s"
+enabled: true

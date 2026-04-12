@@ -1,0 +1,52 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: school-erp-api
+  namespace: default
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/launch-stage: GA
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "2"
+        autoscaling.knative.dev/maxScale: "50"
+        autoscaling.knative.dev/targetUtilizationPercentage: "70"
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      serviceAccountName: school-erp-sa
+      containers:
+        - image: gcr.io/school-erp-prod/api:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          env:
+            - name: PORT
+              value: "3000"
+            - name: NODE_ENV
+              value: "production"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+      timeoutSeconds: 3600
+      concurrency: 100
+  traffic:
+    - percent: 100
+      latestRevision: true

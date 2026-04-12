@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": ["node", "jest"]
+  },
+  "include": ["src/**/*.ts", "src/types/**/*.d.ts"],
+  "exclude": [
+    "src/__tests__/**/*.ts",
+    "src/**/__tests__/**/*.ts",
+    "src/api.test.ts",
+    "src/data/**/*.ts",
+    "src/errors/**/*.ts",
+    "src/modules/**/*.ts",
+    "src/middleware/request-id.ts",
+    "src/repositories/memory-student-repository.ts",
+    "src/repositories/studentRepository.ts",
+    "src/lib/http-error.ts",
+    "src/lib/response.ts"
+  ]
+}

@@ -1,0 +1,15 @@
+displayName: "CloudArmor DDoS Alert (>100 blocked/min)"
+conditions:
+  - displayName: "Blocked requests exceed 100/min"
+    conditionThreshold:
+      filter: 'metric.type="compute.googleapis.com/security_policy/request_count" AND metric.policy_action="deny"'
+      comparison: COMPARISON_GT
+      thresholdValue: 100
+      duration: "60s"
+      aggregations:
+        - alignmentPeriod: "60s"
+          perSeriesAligner: "ALIGN_RATE"
+notificationChannels: []
+alertStrategy:
+  autoClose: "300s"
+enabled: true

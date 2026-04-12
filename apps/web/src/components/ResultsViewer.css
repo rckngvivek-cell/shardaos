@@ -1,0 +1,263 @@
+.results-viewer-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.results-header {
+  margin-bottom: 24px;
+}
+
+.results-header h2 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+  color: #333;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #0066cc;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0066cc;
+}
+
+.results-table-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 32px;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.results-table thead {
+  background: #f5f5f5;
+  border-bottom: 2px solid #ddd;
+}
+
+.results-table th {
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+}
+
+.results-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+  color: #555;
+}
+
+.results-table tr:hover {
+  background: #f9f9f9;
+}
+
+.results-table tr.row-pass {
+  background: rgba(76, 175, 80, 0.02);
+}
+
+.results-table tr.row-fail {
+  background: rgba(211, 47, 47, 0.02);
+}
+
+.student-id {
+  font-weight: 600;
+  color: #0066cc;
+}
+
+.score {
+  font-weight: 600;
+  color: #333;
+}
+
+.percentage {
+  font-weight: 600;
+}
+
+.grade {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-align: center;
+  min-width: 40px;
+}
+
+.grade-a {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.grade-b {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.grade-c {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.grade-d {
+  background: #ffe0b2;
+  color: #d84315;
+}
+
+.grade-f {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.grade-default {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-pass {
+  background: #c8e6c9;
+  color: #2e7d32;
+}
+
+.status-fail {
+  background: #ffcdd2;
+  color: #c62828;
+}
+
+.performance-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.perf-good {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.perf-poor {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.date {
+  font-size: 13px;
+  color: #888;
+}
+
+.results-loading,
+.results-error,
+.results-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #666;
+  font-size: 16px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.results-error {
+  color: #d32f2f;
+  background: #ffebee;
+  border-color: #d32f2f;
+}
+
+.result-details {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.result-card h3 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.performance-details {
+  display: grid;
+  gap: 16px;
+}
+
+.detail-item {
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border-left: 4px solid #0066cc;
+}
+
+.detail-item p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.detail-item strong {
+  color: #0066cc;
+}
+
+.detail-item .grade {
+  padding: 2px 8px;
+  margin-left: 8px;
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .results-table {
+    font-size: 12px;
+  }
+
+  .results-table th,
+  .results-table td {
+    padding: 8px;
+  }
+
+  .grade,
+  .status-badge {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+}

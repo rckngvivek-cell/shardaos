@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "apps/api/dist/index.js",
+      "use": "@vercel/node",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
+    },
+    {
+      "src": "apps/web/dist/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/v1/(.*)",
+      "dest": "apps/api/dist/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "apps/web/dist/index.html"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "3000",
+    "STORAGE_DRIVER": "firestore",
+    "AUTH_MODE": "firebase"
+  },
+  "headers": [
+    {
+      "source": "/api/v1/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ]
+}

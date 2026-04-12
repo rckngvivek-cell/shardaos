@@ -1,0 +1,365 @@
+name: Deploy Notification Service (Week 2 Part 2)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/api/src/functions/notifications/**'
+      - 'apps/infra/**'
+      - '.github/workflows/notification-service-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: us-central1
+  ARTIFACT_REGISTRY: gcr.io
+  SERVICE_NAME: school-erp-notifications
+
+jobs:
+  # Stage 1: Build & Test
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image-uri: ${{ steps.build.outputs.image-uri }}
+      notification-version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: |
+          npm install -g pnpm
+          pnpm install
+
+      - name: Run linting
+        run: pnpm run lint --scope=@school-erp/api
+
+      - name: Run type checking
+        run: pnpm run typecheck --scope=@school-erp/api
+
+      - name: Run unit tests (Notifications)
+        run: pnpm run test --scope=@school-erp/api -- --testPathPattern=notifications
+
+      - name: Generate version
+        id: version
+        run: |
+          VERSION="$(date +%Y%m%d)-$(git rev-parse --short HEAD)"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Notification Service Version: $VERSION"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker to use gcloud as credential helper
+        run: gcloud auth configure-docker
+
+      - name: Build Docker image
+        id: build
+        run: |
+          IMAGE_URI="${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.version.outputs.version }}"
+          docker build \
+            -t "$IMAGE_URI" \
+            -t "${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:latest" \
+            -f apps/api/Dockerfile \
+            --build-arg SERVICE=notifications \
+            .
+          echo "image-uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+
+      - name: Scan Docker image for vulnerabilities
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy image --severity HIGH,CRITICAL \
+            "${{ steps.build.outputs.image-uri }}" || true
+
+      - name: Push image to Container Registry
+        run: |
+          docker push "${{ steps.build.outputs.image-uri }}"
+          docker push "${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:latest"
+
+  # Stage 2: Deploy to Staging
+  deploy-staging:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: staging
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run (Staging)
+        run: |
+          gcloud run deploy school-erp-notifications-staging \
+            --image "${{ needs.build-and-test.outputs.image-uri }}" \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars="ENVIRONMENT=staging,NOTIFICATION_SERVICES=sms,email,push" \
+            --project=${{ env.GCP_PROJECT_ID }}
+
+      - name: Get staging service URL
+        id: staging-url
+        run: |
+          URL=$(gcloud run services describe school-erp-notifications-staging \
+            --region ${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --format="value(status.url)")
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Wait for service to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s "${{ steps.staging-url.outputs.url }}/health"; then
+              echo "Service is ready"
+              exit 0
+            fi
+            echo "Waiting for service... ($i/30)"
+            sleep 10
+          done
+          exit 1
+
+  # Stage 3: Run smoke tests
+  smoke-tests:
+    needs: [build-and-test, deploy-staging]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: |
+          npm install -g pnpm
+          pnpm install
+
+      - name: Run E2E smoke tests
+        env:
+          API_BASE_URL: ${{ needs.deploy-staging.outputs.staging-url }}
+          TEST_ENV: staging
+        run: |
+          pnpm run test:e2e --scope=@school-erp/api -- \
+            --testPathPattern="notification" \
+            --forceExit
+
+  # Stage 4: Security scanning
+  security-scan:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Sonarqube scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: |
+            -Dsonar.projectKey=school-erp-api
+            -Dsonar.sources=apps/api/src
+
+      - name: Check code quality gate
+        run: |
+          QUALITY_GATE=$(curl -s "https://sonarcloud.io/api/qualitygates/project_status?projectKey=school-erp-api" \
+            -H "Authorization: Bearer ${{ secrets.SONAR_TOKEN }}" | jq -r '.projectStatus.status')
+          if [ "$QUALITY_GATE" != "OK" ]; then
+            echo "Quality gate failed: $QUALITY_GATE"
+            exit 1
+          fi
+
+  # Stage 5: Manual approval
+  approval:
+    needs: [smoke-tests, security-scan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production-approval
+    steps:
+      - name: Wait for approval
+        run: |
+          echo "Deployment awaiting manual approval in GitHub"
+          echo "Review changes: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+  # Stage 6: Deploy to Production (Blue-Green)
+  deploy-production:
+    needs: [build-and-test, approval]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Download blue-green deployment script
+        run: |
+          gsutil cp gs://school-erp-scripts/blue-green-deploy.sh .
+          chmod +x blue-green-deploy.sh
+
+      - name: Execute blue-green deployment
+        run: |
+          ./blue-green-deploy.sh "${{ needs.build-and-test.outputs.image-uri }}"
+        env:
+          GCP_PROJECT_ID: ${{ env.GCP_PROJECT_ID }}
+          GCS_REGION: ${{ env.GCP_REGION }}
+
+  # Stage 7: Load test (K6)
+  load-test:
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    if: success() && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get production service URL
+        id: prod-url
+        run: |
+          URL=$(gcloud run services describe school-erp-api \
+            --region ${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --format="value(status.url)")
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Run K6 load test
+        uses: grafana/k6-action@v0.3.0
+        with:
+          filename: apps/infra/monitoring/k6-load-test.js
+          cloud: false
+        env:
+          API_BASE_URL: ${{ steps.prod-url.outputs.url }}
+          LOAD_DURATION: 5m
+          VIRTUAL_USERS: 100
+
+  # Stage 8: Post-deployment validation
+  post-deployment:
+    needs: load-test
+    runs-on: ubuntu-latest
+    if: success()
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Verify error rates (5-min window)
+        run: |
+          ERROR_RATE=$(gcloud monitoring read \
+            --filter='resource.type="cloud_run_revision" AND metric.type="run.googleapis.com/request_count"' \
+            --format='value(point.value.double_value)' \
+            --project=${{ env.GCP_PROJECT_ID }} | \
+            awk '{sum+=$1} END {if(NR>0) print int(sum/NR)}')
+          
+          if [ "$ERROR_RATE" -gt 5 ]; then
+            echo "Error rate too high: $ERROR_RATE%"
+            exit 1
+          fi
+          echo "Error rate within acceptable range: $ERROR_RATE%"
+
+      - name: Create deployment record
+        run: |
+          gcloud logging write school-erp-deployments \
+            "Notification service deployment successful: ${{ needs.build-and-test.outputs.notification-version }}" \
+            --severity=NOTICE \
+            --project=${{ env.GCP_PROJECT_ID }}
+
+  # Handle failures
+  notify-failure:
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Send failure notification to Slack
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: 'Notification service deployment failed'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          fields: |
+            repo
+            message
+            commit
+            author
