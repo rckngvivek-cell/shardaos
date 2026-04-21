@@ -1,0 +1,34 @@
+{
+    "name":  "school-erp-monorepo",
+    "version":  "0.1.0",
+    "private":  true,
+    "workspaces":  [
+                       "apps/*",
+                       "packages/*"
+                   ],
+    "scripts":  {
+                    "postinstall":  "npm run build --workspace @school-erp/shared",
+                    "dev":  "npm run build --workspace @school-erp/shared \u0026\u0026 concurrently -n api,owner,employee,school -c blue,cyan,yellow,magenta \"npm run dev:api\" \"npm run dev:owner\" \"npm run dev:employee\" \"npm run dev:school\"",
+                    "dev:api":  "npm run build --workspace @school-erp/shared \u0026\u0026 npm run dev --workspace @school-erp/api",
+                    "dev:owner":  "npm run dev --workspace @school-erp/owner",
+                    "dev:employee":  "npm run dev --workspace @school-erp/employee",
+                    "dev:school":  "npm run dev --workspace @school-erp/school",
+                    "dev:portals":  "concurrently -n owner,employee,school -c cyan,yellow,magenta \"npm run dev:owner\" \"npm run dev:employee\" \"npm run dev:school\"",
+                    "open:owner":  "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/open-portal.ps1 -App owner -Route /login",
+                    "open:owner:finance":  "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/open-portal.ps1 -App owner -Route /finance",
+                    "open:employee":  "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/open-portal.ps1 -App employee -Route /login",
+                    "open:school":  "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/open-portal.ps1 -App school -Route /login",
+                    "open:apps":  "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/open-portal.ps1 -App all",
+                    "build":  "npm run build --workspace @school-erp/shared \u0026\u0026 npm run build --workspace @school-erp/api \u0026\u0026 npm run build --workspace @school-erp/owner \u0026\u0026 npm run build --workspace @school-erp/employee \u0026\u0026 npm run build --workspace @school-erp/school \u0026\u0026 npm run build --workspace @school-erp/mobile",
+                    "test":  "npm run build --workspace @school-erp/shared \u0026\u0026 npm run test --workspace @school-erp/api \u0026\u0026 npm run test --workspace @school-erp/owner \u0026\u0026 npm run test --workspace @school-erp/employee \u0026\u0026 npm run test --workspace @school-erp/school \u0026\u0026 npm run test --workspace @school-erp/mobile",
+                    "lint":  "npm run build --workspace @school-erp/shared \u0026\u0026 npm run typecheck --workspace @school-erp/shared \u0026\u0026 npm run typecheck --workspace @school-erp/api \u0026\u0026 npm run lint --workspace @school-erp/owner \u0026\u0026 npm run lint --workspace @school-erp/employee \u0026\u0026 npm run lint --workspace @school-erp/school \u0026\u0026 npm run lint --workspace @school-erp/mobile",
+                    "typecheck":  "npm run build --workspace @school-erp/shared \u0026\u0026 npm run typecheck --workspace @school-erp/shared \u0026\u0026 npm run typecheck --workspace @school-erp/api \u0026\u0026 npm run typecheck --workspace @school-erp/owner \u0026\u0026 npm run typecheck --workspace @school-erp/employee \u0026\u0026 npm run typecheck --workspace @school-erp/school \u0026\u0026 npm run typecheck --workspace @school-erp/mobile",
+                    "scan:repo":  "node scripts/repo-scan.cjs",
+                    "owner:bootstrap":  "node scripts/bootstrap-owner.cjs",
+                    "owner:seed":  "node scripts/seed-owner-local-stack.cjs"
+                },
+    "devDependencies":  {
+                            "concurrently":  "^9.2.1",
+                            "dotenv":  "^16.4.7"
+                        }
+}

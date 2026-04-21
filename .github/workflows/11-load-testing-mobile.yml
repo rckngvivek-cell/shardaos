@@ -1,0 +1,356 @@
+name: Mobile Load Testing
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC (10 AM IST)
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      concurrency:
+        description: 'Max concurrent users'
+        required: false
+        default: '1000'
+      duration:
+        description: 'Test duration in seconds'
+        required: false
+        default: '600'
+
+env:
+  API_BASE_URL: ${{ secrets.STAGING_API_URL }}
+  # Optional: when set, the k6 script will exercise protected endpoints too.
+  API_BEARER_TOKEN: ${{ secrets.STAGING_API_BEARER_TOKEN }}
+  SCHOOL_ID: 'school-pilot-1'
+  VUS: ${{ github.event.inputs.concurrency || '1000' }}
+  DURATION_SECONDS: ${{ github.event.inputs.duration || '600' }}
+
+jobs:
+  load-test:
+    name: Load Test - ${{ github.event.inputs.concurrency || '1000' }} VUs (${{ github.event.inputs.duration || '600' }}s)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install k6
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates curl gnupg
+
+          curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+      
+      - name: Validate configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${API_BASE_URL:-}" ]; then
+            echo "API_BASE_URL is empty. Set secrets.STAGING_API_URL."
+            exit 1
+          fi
+
+          if ! [[ "${VUS}" =~ ^[0-9]+$ ]] || [ "${VUS}" -le 0 ]; then
+            echo "Invalid concurrency (VUS): ${VUS}. Must be a positive integer."
+            exit 1
+          fi
+
+          if ! [[ "${DURATION_SECONDS}" =~ ^[0-9]+$ ]] || [ "${DURATION_SECONDS}" -le 0 ]; then
+            echo "Invalid duration: ${DURATION_SECONDS}. Must be a positive integer (seconds)."
+            exit 1
+          fi
+
+          if [ ! -f k6/mobile-loadtest/load-test-1000-concurrent.js ]; then
+            echo "Missing k6 script: k6/mobile-loadtest/load-test-1000-concurrent.js"
+            exit 1
+          fi
+
+          if [ -z "${API_BEARER_TOKEN:-}" ]; then
+            echo "API_BEARER_TOKEN not set; protected endpoints will be skipped."
+          fi
+      
+      - name: Run load test
+        id: loadtest
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          echo "Starting k6 load test..."
+          echo "Configuration:"
+          echo "  - Concurrent Users (VUs): ${VUS}"
+          echo "  - Duration: ${DURATION_SECONDS}s"
+          echo ""
+
+          k6 run k6/mobile-loadtest/load-test-1000-concurrent.js \
+            --vus "${VUS}" \
+            --duration "${DURATION_SECONDS}s" \
+            --summary-export k6-summary.json \
+            --out json=k6-results.json \
+            --out csv=k6-results.csv \
+            2>&1 | tee load-test-output.txt
+
+          exit_code=${PIPESTATUS[0]}
+          echo "test_exit_code=${exit_code}" >> "${GITHUB_OUTPUT}"
+          exit "${exit_code}"
+      
+      - name: Summarize load test results
+        if: always()
+        shell: bash
+        env:
+          K6_EXIT_CODE: ${{ steps.loadtest.outputs.test_exit_code }}
+        run: |
+          set -euo pipefail
+
+          node <<'NODE'
+          const fs = require('fs');
+
+          const exitCode = process.env.K6_EXIT_CODE ?? '';
+          const passed = exitCode === '0';
+          const summaryPath = 'k6-summary.json';
+
+          function metricValue(metrics, name, key) {
+            return metrics?.[name]?.values?.[key];
+          }
+
+          function fmtMs(value) {
+            return typeof value === 'number' ? `${value.toFixed(1)} ms` : 'n/a';
+          }
+
+          function fmtPct(value) {
+            return typeof value === 'number' ? `${(value * 100).toFixed(2)}%` : 'n/a';
+          }
+
+          const lines = [];
+          lines.push('# Mobile Load Test Summary');
+          lines.push('');
+          lines.push(`Status: **${passed ? 'PASS' : 'FAIL'}**`);
+          lines.push('');
+
+          if (fs.existsSync(summaryPath)) {
+            const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+            const metrics = summary.metrics || {};
+
+            const reqs = metricValue(metrics, 'http_reqs', 'count');
+            const errRate = metricValue(metrics, 'http_req_failed', 'rate');
+            const p50 = metricValue(metrics, 'http_req_duration', 'p(50)');
+            const p95 = metricValue(metrics, 'http_req_duration', 'p(95)');
+            const p99 = metricValue(metrics, 'http_req_duration', 'p(99)');
+
+            lines.push('| Metric | Value |');
+            lines.push('| --- | ---: |');
+            lines.push(`| Requests | ${typeof reqs === 'number' ? reqs.toFixed(0) : 'n/a'} |`);
+            lines.push(`| Error rate | ${fmtPct(errRate)} |`);
+            lines.push(`| p50 latency | ${fmtMs(p50)} |`);
+            lines.push(`| p95 latency | ${fmtMs(p95)} |`);
+            lines.push(`| p99 latency | ${fmtMs(p99)} |`);
+            lines.push('');
+          } else {
+            lines.push('k6-summary.json not found; see raw logs in load-test-output.txt.');
+            lines.push('');
+          }
+
+          const md = lines.join('\n');
+          fs.writeFileSync('k6-summary.md', md);
+          console.log(md);
+          NODE
+      
+      - name: Generate HTML report
+        if: always()
+        shell: bash
+        env:
+          K6_EXIT_CODE: ${{ steps.loadtest.outputs.test_exit_code }}
+        run: |
+          set -euo pipefail
+
+          node <<'NODE'
+          const fs = require('fs');
+
+          const exitCode = process.env.K6_EXIT_CODE ?? '';
+          const passed = exitCode === '0';
+          const statusLabel = passed ? 'PASS' : 'FAIL';
+
+          const summaryMd = fs.existsSync('k6-summary.md') ? fs.readFileSync('k6-summary.md', 'utf8') : '';
+          const outputSnippet = fs.existsSync('load-test-output.txt')
+            ? fs.readFileSync('load-test-output.txt', 'utf8').split('\n').slice(-80).join('\n')
+            : '';
+
+          function escapeHtml(value) {
+            return String(value)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/\"/g, '&quot;')
+              .replace(/'/g, '&#39;');
+          }
+
+          const html = `<!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>Mobile Load Test Report</title>
+              <style>
+                :root {
+                  color-scheme: light;
+                }
+                body {
+                  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+                  margin: 24px;
+                  background: #f6f7fb;
+                  color: #111827;
+                }
+                .header {
+                  background: linear-gradient(135deg, #0f172a, #1f2937);
+                  color: white;
+                  padding: 20px 22px;
+                  border-radius: 12px;
+                }
+                .header h1 { margin: 0 0 4px 0; font-size: 20px; }
+                .header p { margin: 0; opacity: 0.9; }
+                .pill {
+                  display: inline-block;
+                  margin-top: 10px;
+                  padding: 6px 10px;
+                  border-radius: 999px;
+                  font-weight: 700;
+                  letter-spacing: 0.02em;
+                  font-size: 12px;
+                  background: ${passed ? '#dcfce7' : '#fee2e2'};
+                  color: ${passed ? '#166534' : '#991b1b'};
+                }
+                .section {
+                  background: white;
+                  margin: 16px 0;
+                  padding: 18px 18px;
+                  border-radius: 12px;
+                  border: 1px solid #e5e7eb;
+                }
+                pre {
+                  white-space: pre-wrap;
+                  word-break: break-word;
+                  background: #0b1020;
+                  color: #e5e7eb;
+                  padding: 14px;
+                  border-radius: 10px;
+                  overflow: auto;
+                  font-size: 12px;
+                  line-height: 1.4;
+                }
+                h2 { margin: 0 0 10px 0; font-size: 14px; color: #111827; }
+              </style>
+            </head>
+            <body>
+              <div class="header">
+                <h1>Mobile Load Test Report</h1>
+                <p>Generated at ${new Date().toISOString()}</p>
+                <div class="pill">STATUS: ${statusLabel}</div>
+              </div>
+
+              <div class="section">
+                <h2>Summary</h2>
+                <pre>${escapeHtml(summaryMd || 'No k6-summary.md generated.')}</pre>
+              </div>
+
+              <div class="section">
+                <h2>Raw Output (tail)</h2>
+                <pre>${escapeHtml(outputSnippet || 'No load-test-output.txt captured.')}</pre>
+              </div>
+            </body>
+          </html>`;
+
+          fs.writeFileSync('load-test-report.html', html);
+          console.log('HTML report generated: load-test-report.html');
+          NODE
+      
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-results
+          path: |
+            k6-summary.json
+            k6-summary.md
+            k6-results.json
+            k6-results.csv
+            load-test-output.txt
+            load-test-report.html
+          retention-days: 30
+      
+      - name: Notify Slack - Success
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_DEVOPS }}
+          payload: |
+            {
+              "text": "✅ Mobile Load Test Passed - ${{ env.VUS }} VUs (${{ env.DURATION_SECONDS }}s)",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Mobile Load Test* ✅\n*Status:* Passed\n*Concurrent Users:* ${{ env.VUS }}\n*Duration:* ${{ env.DURATION_SECONDS }}s"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Artifacts include `k6-summary.md`, `k6-summary.json`, and raw output logs for detailed metrics."
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Artifacts"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+      
+      - name: Notify Slack - Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_DEVOPS }}
+          payload: |
+            {
+              "text": "❌ Mobile Load Test Failed - ${{ env.VUS }} VUs (${{ env.DURATION_SECONDS }}s)",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Mobile Load Test* ❌\n*Status:* Failed\n*Concurrent Users:* ${{ env.VUS }}\n*Duration:* ${{ env.DURATION_SECONDS }}s\n\nSee run artifacts for `k6-summary.md` and logs."
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Logs"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }

@@ -1,0 +1,193 @@
+- generic [ref=e16]:
+  - complementary [ref=e17]:
+    - generic [ref=e19]: ShardaOS Owner
+    - navigation [ref=e20]:
+      - link "Dashboard" [ref=e21] [cursor=pointer]:
+        - /url: /owner
+      - link "Schools" [ref=e22] [cursor=pointer]:
+        - /url: /owner/schools
+      - link "Employees" [ref=e23] [cursor=pointer]:
+        - /url: /owner/employees
+      - link "Approvals" [ref=e24] [cursor=pointer]:
+        - /url: /owner/approvals
+    - generic [ref=e26]: Platform Owner
+    - generic [ref=e27]:
+      - paragraph [ref=e28]: rckngvivek@gmail.com
+      - button "Sign out" [ref=e29] [cursor=pointer]
+  - generic [ref=e30]:
+    - banner [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e33]: rckngvivek@gmail.com
+        - button "Sign out" [ref=e34] [cursor=pointer]
+    - main [ref=e35]:
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - generic [ref=e40]:
+                - generic [ref=e41]: Owner command center
+                - generic [ref=e42]: stable
+              - generic [ref=e43]:
+                - heading "Operate approvals, workforce health, and platform posture from one surface." [level=1] [ref=e44]
+                - paragraph [ref=e45]: Use this control tower to clear owner actions quickly, track access drift, and keep the platform team aligned on the highest-risk operational signals.
+              - generic [ref=e46]:
+                - generic [ref=e47]: Owner session
+                - generic [ref=e48]: Last refresh pending
+                - generic [ref=e49]: Queue is clear
+            - generic [ref=e50]:
+              - generic [ref=e51]:
+                - paragraph [ref=e52]: Pending approvals
+                - paragraph [ref=e53]: —
+                - paragraph [ref=e54]: Requests waiting on owner action
+              - generic [ref=e55]:
+                - paragraph [ref=e56]: Resolved today
+                - paragraph [ref=e57]: —
+                - paragraph [ref=e58]: Approvals cleared in the current day
+              - generic [ref=e59]:
+                - paragraph [ref=e60]: Live schools
+                - paragraph [ref=e61]: —
+                - paragraph [ref=e62]: Active schools on the platform right now
+              - generic [ref=e63]:
+                - paragraph [ref=e64]: School exceptions
+                - paragraph [ref=e65]: —
+                - paragraph [ref=e66]: Schools with onboarding or operational risk
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - link "Work the approval queue Move directly into pending owner actions. →" [ref=e69] [cursor=pointer]:
+                - /url: /owner/approvals
+                - generic [ref=e70]:
+                  - generic [ref=e71]:
+                    - paragraph [ref=e72]: Work the approval queue
+                    - paragraph [ref=e73]: Move directly into pending owner actions.
+                  - generic [ref=e74]: →
+              - link "Inspect school health Open onboarding risk and exception queues across schools. →" [ref=e75] [cursor=pointer]:
+                - /url: /owner/schools
+                - generic [ref=e76]:
+                  - generic [ref=e77]:
+                    - paragraph [ref=e78]: Inspect school health
+                    - paragraph [ref=e79]: Open onboarding risk and exception queues across schools.
+                  - generic [ref=e80]: →
+              - link "Inspect the workforce Review access posture, hires, and inactive accounts. →" [ref=e81] [cursor=pointer]:
+                - /url: /owner/employees
+                - generic [ref=e82]:
+                  - generic [ref=e83]:
+                    - paragraph [ref=e84]: Inspect the workforce
+                    - paragraph [ref=e85]: Review access posture, hires, and inactive accounts.
+                  - generic [ref=e86]: →
+            - button "Refreshing…" [ref=e87] [cursor=pointer]
+        - generic [ref=e88]:
+          - generic [ref=e89]:
+            - generic [ref=e90]:
+              - paragraph [ref=e91]: Queue
+              - heading "Approval lane" [level=2] [ref=e92]
+              - paragraph [ref=e93]: The queue status is derived from live owner-plane approvals so you can clear decisions before they turn into operational drag.
+            - generic [ref=e94]:
+              - generic [ref=e95]:
+                - paragraph [ref=e96]: "0"
+                - paragraph [ref=e97]: Pending requests waiting for owner decision
+              - generic [ref=e98]:
+                - generic [ref=e99]:
+                  - paragraph [ref=e100]: Approved today
+                  - paragraph [ref=e101]: "0"
+                - generic [ref=e102]:
+                  - paragraph [ref=e103]: Denied today
+                  - paragraph [ref=e104]: "0"
+            - generic [ref=e106]: No approvals are waiting right now.
+          - generic [ref=e108]:
+            - paragraph [ref=e109]: Signals
+            - heading "Operational alerts" [level=2] [ref=e110]
+            - paragraph [ref=e111]: These alerts are generated from real queue pressure and workforce-access conditions, not static dashboard copy.
+        - generic [ref=e112]:
+          - generic [ref=e113]:
+            - generic [ref=e114]:
+              - paragraph [ref=e115]: Schools
+              - heading "School operations" [level=2] [ref=e116]
+              - paragraph [ref=e117]: Watch onboarding momentum and spot schools where attendance or grading activity has gone quiet.
+            - generic [ref=e118]:
+              - generic [ref=e119]:
+                - paragraph [ref=e120]: Total schools
+                - paragraph [ref=e121]: "0"
+              - generic [ref=e122]:
+                - paragraph [ref=e123]: Onboarding risk
+                - paragraph [ref=e124]: "0"
+              - generic [ref=e125]:
+                - paragraph [ref=e126]: Exceptions
+                - paragraph [ref=e127]: "0"
+              - generic [ref=e128]:
+                - paragraph [ref=e129]: Inactive
+                - paragraph [ref=e130]: "0"
+            - generic [ref=e132]: Schools will appear here when onboarding or operational exceptions need attention.
+          - generic [ref=e133]:
+            - generic [ref=e134]:
+              - paragraph [ref=e135]: Workforce
+              - heading "Access and department posture" [level=2] [ref=e136]
+              - paragraph [ref=e137]: Track where platform capacity sits, who still has not logged in, and which departments are carrying the highest active load.
+            - generic [ref=e138]:
+              - generic [ref=e139]:
+                - paragraph [ref=e140]: Total staff
+                - paragraph [ref=e141]: "0"
+              - generic [ref=e142]:
+                - paragraph [ref=e143]: Inactive
+                - paragraph [ref=e144]: "0"
+              - generic [ref=e145]:
+                - paragraph [ref=e146]: No login yet
+                - paragraph [ref=e147]: "0"
+              - generic [ref=e148]:
+                - paragraph [ref=e149]: Stale logins
+                - paragraph [ref=e150]: "0"
+            - generic [ref=e151]:
+              - generic [ref=e153]: Departments will populate after the first employees are onboarded.
+              - generic [ref=e154]:
+                - paragraph [ref=e155]: Security posture
+                - paragraph [ref=e156]: 0%
+                - paragraph [ref=e157]: MFA coverage across the active platform workforce.
+                - generic [ref=e158]:
+                  - generic [ref=e159]:
+                    - generic [ref=e160]: MFA enabled
+                    - generic [ref=e161]: "0"
+                  - generic [ref=e162]:
+                    - generic [ref=e163]: Needs review
+                    - generic [ref=e164]: "0"
+        - generic [ref=e166]:
+          - generic [ref=e167]:
+            - paragraph [ref=e168]: Activity
+            - heading "Recent operational activity" [level=2] [ref=e169]
+            - paragraph [ref=e170]: A mixed stream of hires and approval movement so the owner can read what changed without tab-hopping.
+          - generic [ref=e172]: Activity will appear here once approvals or employee changes start flowing.
+        - generic [ref=e173]:
+          - generic [ref=e174]:
+            - generic [ref=e175]:
+              - paragraph [ref=e176]: New staff
+              - heading "Recent hires" [level=2] [ref=e177]
+              - paragraph [ref=e178]: The newest platform-team additions appear here so onboarding momentum is visible from the landing surface.
+            - generic [ref=e180]: No employees have been onboarded yet.
+          - generic [ref=e181]:
+            - generic [ref=e182]:
+              - paragraph [ref=e183]: Actions
+              - heading "Owner workflows" [level=2] [ref=e184]
+              - paragraph [ref=e185]: Jump directly into the operating surfaces that need daily owner decisions.
+            - generic [ref=e186]:
+              - link "Process approvals Open the queue and clear requests by status. →" [ref=e187] [cursor=pointer]:
+                - /url: /owner/approvals
+                - generic [ref=e188]:
+                  - generic [ref=e189]:
+                    - paragraph [ref=e190]: Process approvals
+                    - paragraph [ref=e191]: Open the queue and clear requests by status.
+                  - generic [ref=e192]: →
+              - link "Review schools Prioritize onboarding risk and stale school operations. →" [ref=e193] [cursor=pointer]:
+                - /url: /owner/schools
+                - generic [ref=e194]:
+                  - generic [ref=e195]:
+                    - paragraph [ref=e196]: Review schools
+                    - paragraph [ref=e197]: Prioritize onboarding risk and stale school operations.
+                  - generic [ref=e198]: →
+              - link "Manage employees Create staff records, review departments, and deactivate accounts. →" [ref=e199] [cursor=pointer]:
+                - /url: /owner/employees
+                - generic [ref=e200]:
+                  - generic [ref=e201]:
+                    - paragraph [ref=e202]: Manage employees
+                    - paragraph [ref=e203]: Create staff records, review departments, and deactivate accounts.
+                  - generic [ref=e204]: →
+              - generic [ref=e205]:
+                - paragraph [ref=e206]: Command center freshness
+                - paragraph [ref=e207]: Dashboard has not loaded yet.

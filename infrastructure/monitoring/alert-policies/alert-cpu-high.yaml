@@ -1,0 +1,15 @@
+displayName: "High CPU Usage Alert (>80%)"
+conditions:
+  - displayName: "CPU usage exceeds 80%"
+    conditionThreshold:
+      filter: 'metric.type="run.googleapis.com/cpu_utilizations"'
+      comparison: COMPARISON_GT
+      thresholdValue: 80
+      duration: "120s"
+      aggregations:
+        - alignmentPeriod: "60s"
+          perSeriesAligner: "ALIGN_MEAN"
+notificationChannels: []
+alertStrategy:
+  autoClose: "900s"
+enabled: true

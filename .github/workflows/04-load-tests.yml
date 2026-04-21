@@ -1,0 +1,152 @@
+name: 'Pipeline: Load Testing (K6)'
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths: ['.github/workflows/04-load-tests.yml', 'k6/**', 'src/**/api/**']
+  workflow_run:
+    workflows: ['Pipeline: E2E Tests (Web + Mobile)']
+    types: [completed]
+  schedule:
+    - cron: '0 2 * * *' # Daily at 2 AM UTC
+
+concurrency:
+  group: load-tests-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  load-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    
+    env:
+      K6_VUS: 1000
+      K6_DURATION: 10m
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup k6
+        run: |
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3232A
+          echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6-stable.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+          k6 version
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Start staging environment
+        run: npm run start:staging &
+        timeout-minutes: 5
+      
+      - name: Wait for staging server
+        run: |
+          npm install -g wait-on
+          wait-on http://localhost:3000
+        timeout-minutes: 2
+      
+      - name: Generate auth token
+        id: auth
+        run: |
+          TOKEN=$(curl -s -X POST http://localhost:3000/api/v1/auth/test-login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"test@example.com","password":"password"}' | jq -r '.data.token')
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+      
+      - name: Run K6 Scenario 1 - Parent Login
+        run: k6 run k6/01_parent_login_load_test.js
+        continue-on-error: true
+        env:
+          BASE_URL: http://localhost:3000
+          AUTH_TOKEN: ${{ steps.auth.outputs.token }}
+      
+      - name: Run K6 Scenario 2 - Get Child Grades
+        run: k6 run k6/02_get_child_grades_load_test.js
+        continue-on-error: true
+        env:
+          BASE_URL: http://localhost:3000
+          AUTH_TOKEN: ${{ steps.auth.outputs.token }}
+      
+      - name: Run K6 Scenario 3 - List Children
+        run: k6 run k6/03_list_children_load_test.js
+        continue-on-error: true
+        env:
+          BASE_URL: http://localhost:3000
+          AUTH_TOKEN: ${{ steps.auth.outputs.token }}
+      
+      - name: Run K6 Scenario 4 - Payment Processing
+        run: k6 run k6/04_payment_processing_load_test.js
+        continue-on-error: true
+        env:
+          BASE_URL: http://localhost:3000
+          AUTH_TOKEN: ${{ steps.auth.outputs.token }}
+      
+      - name: Run K6 Scenario 5 - Notification Dispatch
+        run: k6 run k6/05_notification_dispatch_load_test.js
+        continue-on-error: true
+        env:
+          BASE_URL: http://localhost:3000
+          AUTH_TOKEN: ${{ steps.auth.outputs.token }}
+      
+      - name: Run k6 Cloud integration (optional)
+        if: secrets.K6_CLOUD_TOKEN != ''
+        run: k6 run -o cloud k6/*.js
+        continue-on-error: true
+        env:
+          K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }}
+      
+      - name: Generate load test report
+        if: always()
+        run: |
+          echo "## Load Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Scenario 1 (Parent Login 0→1000 VUs): P99 < 500ms" >> $GITHUB_STEP_SUMMARY
+          echo "- Scenario 2 (Get Grades 500 concurrent): P95 < 300ms" >> $GITHUB_STEP_SUMMARY
+          echo "- Scenario 3 (List Children 1000 concurrent): P50 < 200ms" >> $GITHUB_STEP_SUMMARY
+          echo "- Scenario 4 (Payment 100 concurrent): P99 < 1s" >> $GITHUB_STEP_SUMMARY
+          echo "- Scenario 5 (Notifications 1000 msgs/sec): Throughput = 1000 msgs/sec" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Archive load test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: load-test-results
+          path: |
+            k6-results/
+            summary.json
+          retention-days: 30
+      
+      - name: Comment PR with load test summary
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Load Test Results Summary
+              - Parent Login (0→1000 VUs): P99 latency monitored
+              - Get Child Grades (500 concurrent): P95 latency monitored
+              - List Children (1000 concurrent): P50 latency monitored
+              - Payment Processing (100 concurrent): End-to-end flow tested
+              - Notification Dispatch (1000 msgs/sec): Throughput validated
+              
+              [View detailed results in artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`
+            });

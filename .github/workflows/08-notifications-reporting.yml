@@ -1,0 +1,221 @@
+name: 'Pipeline: Build Notifications & Reporting'
+
+on:
+  workflow_run:
+    workflows: 
+      - 'Pipeline: Unit Tests'
+      - 'Pipeline: Integration Tests'
+      - 'Pipeline: E2E Tests (Web + Mobile)'
+      - 'Pipeline: Load Testing (K6)'
+      - 'Pipeline: Security Scanning'
+      - 'Pipeline: Deploy to Staging'
+      - 'Pipeline: Deploy to Production'
+    types: [completed]
+
+concurrency:
+  group: notifications-${{ github.ref }}
+
+jobs:
+  build-status-notification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Determine build status
+        id: status
+        run: |
+          if [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
+            echo "emoji=✅"  >> $GITHUB_OUTPUT
+            echo "status=SUCCESS" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+          else
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "status=FAILED" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          fi
+          echo "workflow=${{ github.event.workflow_run.name }}" >> $GITHUB_OUTPUT
+      
+      - name: Comment on PR with build status
+        if: github.event_name == 'workflow_run'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const workflowName = '${{ steps.status.outputs.workflow }}';
+            const buildStatus = '${{ steps.status.outputs.status }}';
+            const emoji = '${{ steps.status.outputs.emoji }}';
+            
+            let comment = `${emoji} **${workflowName}** - ${buildStatus}\n`;
+            comment += `- Commit: ${{ github.event.workflow_run.head_sha }}\n`;
+            comment += `- Branch: ${{ github.event.workflow_run.head_branch }}\n`;
+            comment += `- [View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }})`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+      
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "${{ steps.status.outputs.status }}: ${{ github.event.workflow_run.name }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ steps.status.outputs.emoji }} *${{ github.event.workflow_run.name }}*\n*Status*: ${{ steps.status.outputs.status }}\n*Commit*: `${{ github.event.workflow_run.head_sha }}`\n*Branch*: `${{ github.event.workflow_run.head_branch }}`"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        continue-on-error: true
+      
+      - name: Send Slack notification to #devops-alerts (failures only)
+        if: github.event.workflow_run.conclusion == 'failure'
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: '#devops-alerts'
+          payload: |
+            {
+              "text": "🚨 CI/CD Pipeline Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚨 *Pipeline Failure Alert*\n*Workflow*: ${{ github.event.workflow_run.name }}\n*Commit*: `${{ github.event.workflow_run.head_sha }}`\n*Author*: ${{ github.event.workflow_run.actor }}\n*Branch*: `${{ github.event.workflow_run.head_branch }}`"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Details"
+                      },
+                      "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_ALERTS_WEBHOOK }}
+        continue-on-error: true
+
+  aggregate-metrics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      
+      - name: Download all artifacts
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ${{ github.event.workflow_run.id }}
+          path: all-artifacts/
+        continue-on-error: true
+      
+      - name: Aggregate test metrics
+        run: |
+          total_tests=0
+          passed_tests=0
+          failed_tests=0
+          
+          # Parse test results
+          find all-artifacts/ -name "*.xml" -type f | while read file; do
+            test_passed=$(grep -o 'tests="[0-9]*"' "$file" | head -1 | grep -o '[0-9]*')
+            test_failed=$(grep -o 'failures="[0-9]*"' "$file" | head -1 | grep -o '[0-9]*')
+            total_tests=$((total_tests + test_passed))
+            failed_tests=$((failed_tests + test_failed))
+          done
+          
+          echo "Total Tests: $total_tests" >> $GITHUB_STEP_SUMMARY
+          echo "Failed Tests: $failed_tests" >> $GITHUB_STEP_SUMMARY
+          echo "Pass Rate: $(( (total_tests - failed_tests) * 100 / total_tests ))%"  >> $GITHUB_STEP_SUMMARY
+      
+      - name: Generate build report
+        run: |
+          echo "# Build Pipeline Report" >> build-report.md
+          echo "- **Workflow**: ${{ github.event.workflow_run.name }}" >> build-report.md
+          echo "- **Status**: ${{ github.event.workflow_run.conclusion }}" >> build-report.md
+          echo "- **Commit**: ${{ github.event.workflow_run.head_sha }}" >> build-report.md
+          echo "- **Time**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> build-report.md
+      
+      - name: Archive build report
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-report-${{ github.run_number }}
+          path: build-report.md
+          retention-days: 60
+
+  dashboard-update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Update build status dashboard
+        run: |
+          # This would typically push to a metrics backend or update a dashboard
+          echo "Build Status: ${{ github.event.workflow_run.conclusion }}"
+          echo "Workflow: ${{ github.event.workflow_run.name }}"
+          echo "Timestamp: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+        continue-on-error: true
+      
+      - name: Send metrics to GCP Cloud Monitoring
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+        continue-on-error: true
+      
+      - name: Update Google Sheets with build metrics
+        run: |
+          # This would push metrics to Google Sheets for tracking
+          echo "Metrics published to tracking sheet"
+        continue-on-error: true

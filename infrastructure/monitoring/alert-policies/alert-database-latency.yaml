@@ -1,0 +1,15 @@
+displayName: "Database Latency Alert (>200ms)"
+conditions:
+  - displayName: "Firestore latency exceeds 200ms"
+    conditionThreshold:
+      filter: 'metric.type="firestore.googleapis.com/database/latencies"'
+      comparison: COMPARISON_GT
+      thresholdValue: 200
+      duration: "300s"
+      aggregations:
+        - alignmentPeriod: "60s"
+          perSeriesAligner: "ALIGN_PERCENTILE_95"
+notificationChannels: []
+alertStrategy:
+  autoClose: "1800s"
+enabled: true

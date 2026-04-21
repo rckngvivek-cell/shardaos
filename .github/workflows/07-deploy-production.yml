@@ -1,0 +1,19 @@
+name: 'DRAFT: Legacy Multi-Region Production Deploy'
+
+on:
+  workflow_dispatch:
+
+jobs:
+  draft-notice:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain current deployment baseline
+        run: |
+          echo "This legacy production workflow is intentionally disabled."
+          echo "Use cloudbuild.yaml to deploy school-erp-api instead."
+
+      - name: Write summary
+        run: |
+          echo "## Legacy production workflow disabled" >> $GITHUB_STEP_SUMMARY
+          echo "- Supported path: \`cloudbuild.yaml\` -> Cloud Run service \`school-erp-api\`." >> $GITHUB_STEP_SUMMARY
+          echo "- Legacy multi-region \`deerflow\` production automation is draft and not authoritative." >> $GITHUB_STEP_SUMMARY

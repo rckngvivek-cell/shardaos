@@ -1,0 +1,192 @@
+# Cloud Monitoring Alert Rules for School ERP - Week 4
+# Location: infrastructure/monitoring/alerting-rules.yaml
+# Updated: 2026-05-09
+
+---
+# Alert Policy 1: High Error Rate
+alertPolicies:
+  - displayName: "PRD-ALERT-001: API Error Rate > 1%"
+    conditions:
+      - displayName: "Error Rate Exceeds 1%"
+        conditionThreshold:
+          filter: |
+            metric.type="logging.googleapis.com/user/api_errors"
+            AND resource.type="cloud_run_revision"
+            AND metadata.user_labels.service="school-erp-api"
+          aggregations:
+            - alignmentPeriod: "60s"
+              perSeriesAligner: "ALIGN_RATE"
+          comparison: "COMPARISON_GT"
+          thresholdValue: 0.01
+          duration: "300s"
+          trigger:
+            count: 1
+    notificationChannels:
+      - "projects/[PROJECT_ID]/notificationChannels/[EMAIL_CHANNEL_ID]"
+      - "projects/[PROJECT_ID]/notificationChannels/[SMS_CHANNEL_ID]"
+      - "projects/[PROJECT_ID]/notificationChannels/[PAGERDUTY_CHANNEL_ID]"
+    alertStrategy:
+      autoClose: "86400s"
+      notificationRateLimit:
+        period: "300s"
+
+---
+# Alert Policy 2: Slow API Response (p95 Latency)
+  - displayName: "PRD-ALERT-002: API p95 Latency > 500ms"
+    conditions:
+      - displayName: "p95 Latency Exceeds 500ms"
+        conditionThreshold:
+          filter: |
+            metric.type="logging.googleapis.com/user/api_response_time"
+            AND resource.type="cloud_run_revision"
+            AND metadata.user_labels.service="school-erp-api"
+          aggregations:
+            - alignmentPeriod: "60s"
+              perSeriesAligner: "ALIGN_PERCENTILE_95"
+          comparison: "COMPARISON_GT"
+          thresholdValue: 500
+          duration: "300s"
+          trigger:
+            count: 1
+    notificationChannels:
+      - "projects/[PROJECT_ID]/notificationChannels/[EMAIL_CHANNEL_ID]"
+      - "projects/[PROJECT_ID]/notificationChannels/[SLACK_CHANNEL_ID]"
+    alertStrategy:
+      autoClose: "3600s"
+      notificationRateLimit:
+        period: "300s"
+
+---
+# Alert Policy 3: Cloud Run Auto-scaling Failure
+  - displayName: "PRD-ALERT-003: Cloud Run Auto-scale Failure"
+    conditions:
+      - displayName: "Instances Stuck at Low Count During High Load"
+        conditionThreshold:
+          filter: |
+            metric.type="run.googleapis.com/instances"
+            AND resource.type="cloud_run_service"
+            AND resource.labels.service_name="school-erp-api"
+          aggregations:
+            - alignmentPeriod: "60s"
+              perSeriesAligner: "ALIGN_MEAN"
+          comparison: "COMPARISON_LT"
+          thresholdValue: 2
+          duration: "300s"
+          trigger:
+            count: 1
+    notificationChannels:
+      - "projects/[PROJECT_ID]/notificationChannels/[EMAIL_CHANNEL_ID]"
+      - "projects/[PROJECT_ID]/notificationChannels/[PAGERDUTY_CHANNEL_ID]"
+    alertStrategy:
+      autoClose: "1800s"
+      notificationRateLimit:
+        period: "600s"
+
+---
+# Alert Policy 4: High Firestore Latency (Bonus)
+  - displayName: "PRD-ALERT-004: Firestore High Latency > 250ms (READ)"
+    conditions:
+      - displayName: "Firestore Read Latency Exceeds 250ms"
+        conditionThreshold:
+          filter: |
+            metric.type="firestore.googleapis.com/instance/firestore_latencies"
+            AND resource.type="firestore_instance"
+            AND metric.label.operation_type="Read"
+          aggregations:
+            - alignmentPeriod: "60s"
+              perSeriesAligner: "ALIGN_PERCENTILE_95"
+          comparison: "COMPARISON_GT"
+          thresholdValue: 250
+          duration: "300s"
+          trigger:
+            count: 1
+    notificationChannels:
+      - "projects/[PROJECT_ID]/notificationChannels/[EMAIL_CHANNEL_ID]"
+      - "projects/[PROJECT_ID]/notificationChannels/[SLACK_CHANNEL_ID]"
+    alertStrategy:
+      autoClose: "1800s"
+      notificationRateLimit:
+        period: "300s"
+
+---
+# Alert Policy 5: High Firestore Write Latency (Bonus)
+  - displayName: "PRD-ALERT-005: Firestore High Latency > 300ms (WRITE)"
+    conditions:
+      - displayName: "Firestore Write Latency Exceeds 300ms"
+        conditionThreshold:
+          filter: |
+            metric.type="firestore.googleapis.com/instance/firestore_latencies"
+            AND resource.type="firestore_instance"
+            AND metric.label.operation_type="Write"
+          aggregations:
+            - alignmentPeriod: "60s"
+              perSeriesAligner: "ALIGN_PERCENTILE_95"
+          comparison: "COMPARISON_GT"
+          thresholdValue: 300
+          duration: "300s"
+          trigger:
+            count: 1
+    notificationChannels:
+      - "projects/[PROJECT_ID]/notificationChannels/[EMAIL_CHANNEL_ID]"
+      - "projects/[PROJECT_ID]/notificationChannels/[SLACK_CHANNEL_ID]"
+    alertStrategy:
+      autoClose: "1800s"
+      notificationRateLimit:
+        period: "300s"
+
+---
+# Notification Channels Configuration
+# These must be created and verified in Cloud Monitoring UI
+notificationChannels:
+  - type: "email"
+    displayName: "DevOps Team Email"
+    labels:
+      email_address: "devops-team@school-erp.local"
+  
+  - type: "sms"
+    displayName: "On-Call Engineer SMS"
+    labels:
+      number: "+1-XXX-XXX-XXXX"
+  
+  - type: "slack"
+    displayName: "Critical Alerts Slack"
+    labels:
+      channel_name: "#incidents"
+      url: "https://hooks.slack.com/services/[WEBHOOK_URL]"
+  
+  - type: "pagerduty"
+    displayName: "PagerDuty Integration"
+    labels:
+      service_key: "[PAGERDUTY_SERVICE_KEY]"
+
+---
+# Severity Levels and Response Guidelines
+severityMapping:
+  CRITICAL:
+    errorRate: ">1%"
+    latency: ">1000ms"
+    responseTime: "<5 min"
+    escalation: "Page on-call engineer immediately"
+  
+  HIGH:
+    errorRate: "0.5-1%"
+    latency: "500-1000ms"
+    responseTime: "<10 min"
+    escalation: "Notify team lead"
+  
+  MEDIUM:
+    errorRate: "<0.5%"
+    latency: "200-500ms"
+    responseTime: "<30 min"
+    escalation: "Create incident ticket"
+
+---
+# Testing & Validation
+# To test alerts in staging:
+#   1. gcloud alpha monitoring policies create --policy-from-file=alerting-rules.yaml --project=[PROJECT_ID]
+#   2. Simulate error spike: while true; do curl https://staging-api.cloud.run/api/v1/invalid; done
+#   3. Verify alert fires in Cloud Monitoring console
+#   4. Check notification channels receive alert
+#   5. Manually acknowledge in PagerDuty if integrated
+
+lastUpdated: "2026-05-09T00:00:00Z"

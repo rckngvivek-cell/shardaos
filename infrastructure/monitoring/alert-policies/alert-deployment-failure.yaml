@@ -1,0 +1,15 @@
+displayName: "Deployment Failure Alert"
+conditions:
+  - displayName: "Cloud Run deployment failed"
+    conditionThreshold:
+      filter: 'metric.type="run.googleapis.com/revision/request_count" AND resource.service_name="school-erp-api"'
+      comparison: COMPARISON_LT
+      thresholdValue: 1
+      duration: "60s"
+      aggregations:
+        - alignmentPeriod: "60s"
+          perSeriesAligner: "ALIGN_RATE"
+notificationChannels: []
+alertStrategy:
+  autoClose: "600s"
+enabled: true

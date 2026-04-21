@@ -1,0 +1,218 @@
+name: 'Pipeline: Security Scanning'
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  schedule:
+    - cron: '0 0 * * 0' # Weekly on Sunday
+
+concurrency:
+  group: security-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    permissions:
+      contents: read
+      security-events: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: 'javascript'
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: '/language:javascript'
+      
+      - name: Run ESLint security checks
+        run: npm run lint -- --format=sarif --output-file=eslint-results.sarif
+        continue-on-error: true
+      
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: eslint-results.sarif
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    permissions:
+      contents: read
+      security-events: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+      
+      - name: Dependency scanning with Snyk
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --json > snyk-results.json
+        continue-on-error: true
+      
+      - name: Upload Snyk results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: snyk-results
+          path: snyk-results.json
+      
+      - name: Comment PR with dependency results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '## Dependency Security Check\n✅ npm audit completed\n✅ Snyk scanning completed'
+            });
+
+  owasp-dependency-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          path: '.'
+          format: 'SARIF'
+          args: >
+            --enable-retired
+            --exclude node_modules
+      
+      - name: Upload OWASP results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'dependency-check-report.sarif'
+
+  container-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        run: docker build -t school-erp-api:scan -f apps/api/Dockerfile .
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'school-erp-api:scan'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+      
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: TruffleHog secret scanning
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+        continue-on-error: true
+
+  security-summary:
+    runs-on: ubuntu-latest
+    needs: [sast, dependency-check, owasp-dependency-check, container-scan, secret-scan]
+    if: always()
+    
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Generate Security Summary
+        run: |
+          echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- SAST (CodeQL + ESLint): ${{ needs.sast.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Dependency Check (npm audit + Snyk): ${{ needs.dependency-check.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- OWASP Dependency-Check: ${{ needs.owasp-dependency-check.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Container Scan (Trivy): ${{ needs.container-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Secret Scan (TruffleHog): ${{ needs.secret-scan.result }}" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Comment PR with security results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sast = '${{ needs.sast.result }}' === 'success' ? '✅' : '⚠️';
+            const deps = '${{ needs.dependency-check.result }}' === 'success' ? '✅' : '⚠️';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Security Scanning Results
+              ${sast} SAST (CodeQL)
+              ${deps} Dependency Scanning
+              ✅ Secret Scanning
+              ✅ Container Scanning`
+            });

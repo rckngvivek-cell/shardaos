@@ -1,0 +1,33 @@
+{
+  "expo": "51.0.0",
+  "name": "school-erp-mobile",
+  "slug": "school-erp-mobile",
+  "version": "1.0.0",
+  "assetBundlePatterns": [
+    "**/*"
+  ],
+  "ios": {
+    "supportsTabletMode": true,
+    "bundleIdentifier": "com.schoolerp.mobile"
+  },
+  "android": {
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/adaptive-icon.png",
+      "backgroundColor": "#ffffff"
+    },
+    "package": "com.schoolerp.mobile"
+  },
+  "web": {
+    "favicon": "./assets/favicon.png"
+  },
+  "plugins": [
+    [
+      "expo-build-properties",
+      {
+        "ios": {
+          "useFrameworks": "static"
+        }
+      }
+    ]
+  ]
+}
