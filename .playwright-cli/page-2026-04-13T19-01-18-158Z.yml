@@ -1,0 +1,61 @@
+- generic [ref=e17]:
+  - complementary [ref=e18]:
+    - generic [ref=e20]: ShardaOS Owner
+    - navigation [ref=e21]:
+      - link "Dashboard" [ref=e22] [cursor=pointer]:
+        - /url: /owner
+      - link "Schools" [ref=e23] [cursor=pointer]:
+        - /url: /owner/schools
+      - link "Employees" [ref=e24] [cursor=pointer]:
+        - /url: /owner/employees
+      - link "Approvals" [ref=e25] [cursor=pointer]:
+        - /url: /owner/approvals
+    - generic [ref=e27]: Platform Owner
+    - generic [ref=e28]:
+      - paragraph [ref=e29]: rckngvivek@gmail.com
+      - button "Sign out" [ref=e30] [cursor=pointer]
+  - generic [ref=e31]:
+    - banner [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e34]: rckngvivek@gmail.com
+        - button "Sign out" [ref=e35] [cursor=pointer]
+    - main [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - generic [ref=e39]:
+            - generic [ref=e40]:
+              - generic [ref=e41]: School operations
+              - generic [ref=e42]:
+                - heading "School health and onboarding queue" [level=1] [ref=e43]
+                - paragraph [ref=e44]: "Review every school through one operational lens: onboarding readiness, stale attendance, grade publishing gaps, and approval-linked exceptions."
+            - generic [ref=e45]:
+              - generic [ref=e46]:
+                - paragraph [ref=e47]: Active schools
+                - paragraph [ref=e48]: "0"
+              - generic [ref=e49]:
+                - paragraph [ref=e50]: Operational exceptions
+                - paragraph [ref=e51]: "0"
+              - generic [ref=e52]:
+                - paragraph [ref=e53]: Onboarding risk
+                - paragraph [ref=e54]: "0"
+              - generic [ref=e55]:
+                - paragraph [ref=e56]: Inactive schools
+                - paragraph [ref=e57]: "0"
+          - generic [ref=e58]:
+            - paragraph [ref=e59]: Dataset refreshed Just now.
+            - button "Refresh school operations" [ref=e60] [cursor=pointer]
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - paragraph [ref=e64]: Filters
+              - heading "Exception queue" [level=2] [ref=e65]
+              - paragraph [ref=e66]: Search by school name or code, then narrow by operational status.
+            - generic [ref=e67]:
+              - textbox "Search schools" [ref=e68]
+              - generic [ref=e69]:
+                - button "All schools" [ref=e70] [cursor=pointer]
+                - button "watch" [ref=e71] [cursor=pointer]
+                - button "onboarding" [ref=e72] [cursor=pointer]
+                - button "healthy" [ref=e73] [cursor=pointer]
+                - button "inactive" [ref=e74] [cursor=pointer]
+          - generic [ref=e76]: No schools match the current filters.

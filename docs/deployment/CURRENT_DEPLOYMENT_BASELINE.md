@@ -43,7 +43,7 @@ Use the manual path only when Cloud Build is unavailable or when you need a cont
   - `/health/ready`
 - Default production env vars set by deployment:
   - `NODE_ENV=production`
-  - `AUTH_MODE=firebase`
+  - `AUTH_MODE=jwt`
   - `PORT=3000`
 
 ## Explicitly draft paths

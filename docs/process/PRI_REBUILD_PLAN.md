@@ -34,7 +34,7 @@ Everything under these directories:
 
 ```
 apps/api/src/           → All 113 source files
-apps/web/src/           → All 64 source files
+apps/owner/src/         → Owner portal source files
 apps/mobile/src/        → All 10 source files
 packages/shared/src/    → The 1 source file
 tests/                  → Exam tests (will rewrite)
@@ -44,7 +44,7 @@ sql/                    → BigQuery schemas (will regen)
 ```
 
 Current baseline note:
-Founder-only capabilities are implemented through the owner plane in `apps/api` and `apps/web`. A standalone `apps/founder` workspace is not part of the current runnable baseline unless a later slice introduces it deliberately.
+Founder-only capabilities are implemented through the owner plane in `apps/api` and `apps/owner`. A standalone `apps/founder` workspace is not part of the current runnable baseline unless a later slice introduces it deliberately.
 
 ### What Gets PRESERVED
 
@@ -103,7 +103,7 @@ qa/                     → QA docs
 |-------|-----------|-----------|
 | **Database** | Firestore | Real-time sync, offline support, multi-tenant |
 | **API** | Express 5 + TypeScript | Already proven, scales on Cloud Run |
-| **Auth** | Firebase Auth | Multi-provider, mobile-native |
+| **Auth** | First-party JWT | Access + refresh tokens with explicit platform and tenant sessions |
 | **Frontend** | React 18 + Vite + Tailwind | Fast builds, modern DX |
 | **State** | Redux Toolkit + RTK Query | Typed, cacheable API layer |
 | **Mobile** | React Native + Expo | Cross-platform, shared logic |
@@ -325,12 +325,12 @@ One auth middleware in `apps/api/src/middleware/auth.ts`:
 
 ```
 Modes:
-  - "firebase": Verify Bearer token via Firebase Admin verifyIdToken()
+  - "jwt": Verify first-party bearer token via the auth session store
   - "dev": Bypass token, inject dev user (local development only)
 
 Responsibilities:
   1. Extract Bearer token from Authorization header
-  2. Verify token (Firebase or dev bypass)
+  2. Verify token (JWT or dev bypass)
   3. Extract uid, email, role, schoolId from decoded token
   4. Attach AuthUser to req.user
   5. Reject 401 if invalid
@@ -366,7 +366,7 @@ Components: Tailwind CSS utility classes + headless components
 3. Scaffold monorepo structure with package.json files
 4. Create `packages/shared` with types and schemas
 5. Create `apps/api` with Express scaffold + single auth middleware
-6. Create `apps/web` with React + Vite scaffold
+6. Create `apps/owner`, `apps/employee`, and `apps/school` with React + Vite scaffolds
 7. Wire up root workspace scripts
 8. Verify: `npm install`, `npm run typecheck`, `npm run build`
 
@@ -391,7 +391,7 @@ Components: Tailwind CSS utility classes + headless components
 
 ### Sprint 4: Auth + Parent Portal
 
-- Firebase Auth integration (production mode)
+- JWT auth hardening (production mode)
 - Parent portal pages
 - Role-based access control
 - Mobile app scaffold

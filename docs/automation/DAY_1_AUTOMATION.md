@@ -21,7 +21,7 @@ This file distills the large automation plan into what exists now versus what sh
 ## Next automation milestones
 
 1. Add Firestore emulator-backed repository and fixture seeding.
-2. Add Firebase Auth verification in non-mock environments.
+2. Add JWT session enforcement in non-dev environments and retire local bypasses where fixtures exist.
 3. Add scheduled backup workflow and restore drill checklist.
 4. Add queue-backed notification service for attendance and billing.
 5. Add analytics export pipeline for dashboards and founder reporting.

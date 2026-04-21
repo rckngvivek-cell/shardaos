@@ -15,7 +15,8 @@ export function createApp() {
   const app = express();
 
   // Core middleware
-  app.use(express.json());
+  app.disable('x-powered-by');
+  app.use(express.json({ limit: '256kb' }));
   app.use(requestId);
 
   // Expose the same health contract under both app and probe endpoints so

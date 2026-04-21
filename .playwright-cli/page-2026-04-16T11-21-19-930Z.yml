@@ -1,0 +1,63 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e6]: ShardaOS Owner
+    - navigation [ref=e7]:
+      - link "Dashboard" [ref=e8] [cursor=pointer]:
+        - /url: /owner
+      - link "Schools" [ref=e9] [cursor=pointer]:
+        - /url: /owner/schools
+      - link "Employees" [ref=e10] [cursor=pointer]:
+        - /url: /owner/employees
+      - link "Approvals" [ref=e11] [cursor=pointer]:
+        - /url: /owner/approvals
+    - generic [ref=e13]: Platform Owner
+    - generic [ref=e14]:
+      - paragraph [ref=e15]: rckngvivek@gmail.com
+      - button "Sign out" [ref=e16] [cursor=pointer]
+  - generic [ref=e17]:
+    - banner [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: rckngvivek@gmail.com
+        - button "Sign out" [ref=e21] [cursor=pointer]
+    - main [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - generic [ref=e27]: Workforce control
+            - generic [ref=e28]:
+              - heading "Manage platform staff, department ownership, and access posture." [level=1] [ref=e29]
+              - paragraph [ref=e30]: Owners can onboard new staff, correct employee records, and control who is active on the platform plane from one surface.
+            - generic [ref=e31]:
+              - button "Add employee" [ref=e32] [cursor=pointer]
+              - button "Focus access review" [ref=e33] [cursor=pointer]
+          - generic [ref=e34]:
+            - generic [ref=e35]:
+              - paragraph [ref=e36]: Total staff
+              - paragraph [ref=e37]: "0"
+              - paragraph [ref=e38]: Platform employees under owner control.
+            - generic [ref=e39]:
+              - paragraph [ref=e40]: Active
+              - paragraph [ref=e41]: "0"
+              - paragraph [ref=e42]: Staff currently enabled on the platform plane.
+            - generic [ref=e43]:
+              - paragraph [ref=e44]: Needs review
+              - paragraph [ref=e45]: "0"
+              - paragraph [ref=e46]: Missing MFA, no login, or currently inactive.
+            - generic [ref=e47]:
+              - paragraph [ref=e48]: MFA coverage
+              - paragraph [ref=e49]: 0%
+              - paragraph [ref=e50]: Coverage across the current employee roster.
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - generic [ref=e53]:
+              - paragraph [ref=e54]: Roster
+              - heading "Employee access roster" [level=2] [ref=e55]
+              - paragraph [ref=e56]: Search staff, isolate inactive records, and focus attention on access posture.
+            - generic [ref=e57]:
+              - textbox "Search name, email, department, or UID" [ref=e58]
+              - generic [ref=e59]:
+                - button "All staff" [ref=e60] [cursor=pointer]
+                - button "active" [ref=e61] [cursor=pointer]
+                - button "inactive" [ref=e62] [cursor=pointer]
+                - button "review" [ref=e63] [cursor=pointer]
+          - generic [ref=e65]: Loading employee roster…

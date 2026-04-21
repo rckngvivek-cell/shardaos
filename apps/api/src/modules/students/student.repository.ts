@@ -8,6 +8,30 @@ function schoolStudentsRef(schoolId: string) {
 }
 
 export class StudentRepository {
+  async countActive(schoolId: string): Promise<number> {
+    const snap = await schoolStudentsRef(schoolId)
+      .where('isActive', '==', true)
+      .count()
+      .get();
+
+    return snap.data().count;
+  }
+
+  async getLatestEnrollmentAt(schoolId: string): Promise<string | null> {
+    const snap = await schoolStudentsRef(schoolId)
+      .where('isActive', '==', true)
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get();
+
+    if (snap.empty) {
+      return null;
+    }
+
+    const value = snap.docs[0].get('createdAt');
+    return typeof value === 'string' ? value : null;
+  }
+
   async findAll(
     schoolId: string,
     opts: { page: number; limit: number; grade?: string; section?: string }

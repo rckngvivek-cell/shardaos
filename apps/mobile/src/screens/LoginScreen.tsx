@@ -13,7 +13,7 @@ export function LoginScreen({ navigation }: Props) {
   const dispatch = useDispatch();
 
   function handleLogin() {
-    // TODO: Replace with Firebase auth
+    // TODO: Replace this temporary local mobile session with the shared JWT API login flow.
     dispatch(setUser({ uid: 'dev-user-001', role: 'school_admin', schoolId: 'dev-school-001' }));
     navigation.replace('Home');
   }

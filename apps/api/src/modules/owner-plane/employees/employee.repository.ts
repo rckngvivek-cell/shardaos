@@ -45,4 +45,8 @@ export class EmployeeRepository {
   async deactivate(id: string): Promise<void> {
     await this.col.doc(id).update({ isActive: false, updatedAt: new Date().toISOString() });
   }
+
+  async activate(id: string): Promise<void> {
+    await this.col.doc(id).update({ isActive: true, updatedAt: new Date().toISOString() });
+  }
 }

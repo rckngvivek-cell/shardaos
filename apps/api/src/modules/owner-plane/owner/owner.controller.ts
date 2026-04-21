@@ -26,3 +26,31 @@ export async function getOwnerSummary(_req: Request, res: Response, next: NextFu
     next(err);
   }
 }
+
+export async function getOwnerDashboard(req: Request, res: Response, next: NextFunction) {
+  try {
+    const platformUser = req.platformUser;
+    if (!platformUser) {
+      throw new AppError(401, 'UNAUTHORIZED', 'Platform authentication required');
+    }
+
+    const dashboard = await service.getDashboard(platformUser);
+    res.json(successResponse(dashboard));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getOwnerSecurity(req: Request, res: Response, next: NextFunction) {
+  try {
+    const platformUser = req.platformUser;
+    if (!platformUser) {
+      throw new AppError(401, 'UNAUTHORIZED', 'Platform authentication required');
+    }
+
+    const securityCenter = await service.getSecurityCenter(platformUser);
+    res.json(successResponse(securityCenter));
+  } catch (err) {
+    next(err);
+  }
+}

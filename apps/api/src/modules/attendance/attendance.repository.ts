@@ -8,6 +8,20 @@ function schoolAttendanceRef(schoolId: string) {
 }
 
 export class AttendanceRepository {
+  async getLatestRecordedAt(schoolId: string): Promise<string | null> {
+    const snap = await schoolAttendanceRef(schoolId)
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get();
+
+    if (snap.empty) {
+      return null;
+    }
+
+    const value = snap.docs[0].get('createdAt');
+    return typeof value === 'string' ? value : null;
+  }
+
   async findAll(
     schoolId: string,
     opts: { date?: string; grade?: string; section?: string; page: number; limit: number }

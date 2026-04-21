@@ -1,4 +1,5 @@
 export * from './user.js';
+export * from './auth.js';
 export * from './platform.js';
 export * from './api.js';
 export * from './school.js';

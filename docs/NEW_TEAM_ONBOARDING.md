@@ -101,8 +101,8 @@ nano .env.local  # or vim, or open in editor
 
 # Required values to set:
 #  - FIREBASE_PROJECT_ID (get from team lead)
-#  - FIREBASE_PRIVATE_KEY (request from secret manager)
-#  - DATABASE_URL (Firestore emulator default: http://localhost:8081)
+#  - OWNER_BOOTSTRAP_KEY or OWNER_BOOTSTRAP_KEY_FILE (for owner bootstrap in JWT mode)
+#  - FIRESTORE_EMULATOR_HOST (default local value: 127.0.0.1:8081)
 #  - GOOGLE_APPLICATION_CREDENTIALS (download service account key)
 
 # Verify file created
@@ -129,17 +129,17 @@ gcloud secrets versions access latest --secret="firebase-config" > firebase-conf
 
 ```bash
 # Start all services locally:
-npm run dev
+npm run dev:portals
 
 # This starts:
 # 1. API server (port 3000)
-# 2. Frontend dev server (port 5173)
+# 2. Owner portal (port 5174)
 
 # Expected output:
 # ✓ API server ready at http://localhost:3000
-# ✓ Frontend ready at http://localhost:5173
+# ✓ Owner portal ready at http://localhost:5174
 
-# Open http://localhost:5173 in browser
+# Open http://localhost:5174/login in browser
 ```
 
 ### Manual Service Setup (if above doesn't work)
@@ -150,8 +150,8 @@ npm run dev
 # Navigate to workspace
 cd ~/workspace/school-erp
 
-# Start Firestore + Auth emulators when you need Firebase integration testing
-npx firebase emulators:start --only auth,firestore --project school-erp-dev
+# Start the Firestore emulator when you need local Firestore integration testing
+npx firebase emulators:start --only firestore --project school-erp-dev
 
 # Expected output:
 # Firestore listening on localhost:8081
@@ -172,26 +172,26 @@ export NODE_ENV=development
 export PORT=3000
 
 # Start API server
-npm run dev
+npm run dev:portals
 
 # Expected output:
 # ✓ Server running on port 3000
 # ✓ Connected to Firestore emulator
 ```
 
-**Terminal 3: Frontend**
+**Terminal 3: Portals**
 
 ```bash
-cd ~/workspace/school-erp/apps/web
+cd ~/workspace/school-erp
 
 # Install web dependencies (if not done)
 npm install
 
-# Start React dev server
-npm run dev
+# Start the three browser portals
+npm run dev:portals
 
 # Expected output:
-# Local: http://localhost:5173
+# Owner: http://localhost:5174/login`r`n# Employee: http://localhost:5175/login`r`n# School: http://localhost:5176/login
 # Press 'h' for help, 'q' to quit
 ```
 
@@ -203,7 +203,9 @@ curl http://localhost:3000/api/health
 
 # Expected: {"status":"ok"}
 
-curl http://localhost:5173
+curl http://localhost:5174
+curl http://localhost:5175
+curl http://localhost:5176
 
 # Expected: HTML response (homepage)
 ```
@@ -223,7 +225,7 @@ apps/
 │       ├── security.test.ts         (Authorization tests)
 │       └── integration.test.ts      (End-to-end tests)
 │
-└── web/
+├── owner/`r`n│   └── src/`r`n│       └── ...`r`n├── employee/`r`n│   └── src/`r`n│       └── ...`r`n└── school/
     └── __tests__/
         ├── components/              (React component tests)
         ├── pages/                   (Page integration tests)
@@ -248,7 +250,7 @@ npm run test
 npm run test --workspace=api
 
 # Frontend tests only
-npm run test --workspace=web
+npm run test --workspace=@school-erp/owner
 
 # Watch mode (re-run on file changes)
 npm run test:watch
@@ -309,7 +311,7 @@ git checkout -b feature/student-enrollment-ui
 git status
 
 # Stage specific files
-git add apps/web/src/pages/StudentEnrollment.tsx
+git add apps/school/src/App.tsx
 git add apps/api/src/routes/students.ts
 
 # Or stage all: git add .
@@ -422,7 +424,7 @@ npm install
 
 # Specific workspace
 npm install --workspace=api
-npm install --workspace=web
+npm install --workspace=@school-erp/school
 
 # Clear cache if still broken
 rm -rf node_modules package-lock.json
@@ -442,7 +444,7 @@ lsof -i :3000
 kill -9 <PID>
 
 # Or specify different port
-PORT=3001 npm run dev
+PORT=3001 npm run dev:portals
 ```
 
 ### Error: "Firestore emulator not connected"
@@ -452,7 +454,7 @@ PORT=3001 npm run dev
 
 ```bash
 # Ensure emulator running in separate terminal
-npx firebase emulators:start --only auth,firestore --project school-erp-dev
+npx firebase emulators:start --only firestore --project school-erp-dev
 
 # Set environment variable
 export FIRESTORE_EMULATOR_HOST=localhost:8081
@@ -461,10 +463,10 @@ export FIRESTORE_EMULATOR_HOST=localhost:8081
 echo $FIRESTORE_EMULATOR_HOST  # Should print: localhost:8081
 
 # Restart API server
-npm run dev
+npm run dev:portals
 ```
 
-### Error: "FIREBASE_PRIVATE_KEY is missing"
+### Error: "GOOGLE_APPLICATION_CREDENTIALS is missing"
 
 **Cause:** .env.local not configured  
 **Fix:**
@@ -478,11 +480,11 @@ nano .env.local
 
 # Add these lines:
 FIREBASE_PROJECT_ID=school-erp-prod
-FIREBASE_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n..."
+OWNER_BOOTSTRAP_KEY_FILE=/absolute/path/to/owner-bootstrap.key
 GOOGLE_APPLICATION_CREDENTIALS=./firebase-key.json
 
 # Save and restart:
-npm run dev
+npm run dev:portals
 ```
 
 ### Error: "Tests failing with 'document.querySelector is not a function'"
@@ -508,15 +510,15 @@ global.window = dom.window;
 **Fix:**
 
 ```bash
-# Get valid token from Firebase console or CLI:
-firebase auth:export users.json
+ # Sign in through the API and reuse the returned access token:
+curl -X POST http://localhost:3000/api/auth/platform/login -H "Content-Type: application/json" -d '{"email":"owner@example.com","password":"your-password"}'
 
-# Use in header:
+# Then use the returned accessToken in the header:
 curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:3000/api/students
 
-# For testing, bypass auth in development:
-# Edit apps/api/src/middleware/auth.ts:
-// if (process.env.NODE_ENV === 'development') return next();
+ # For local UI-only work, you can still use AUTH_MODE=dev instead of editing middleware:
+AUTH_MODE=dev npm run dev:portals
+
 ```
 
 ### Error: "npm ERR! code EACCES permission denied"
@@ -670,8 +672,8 @@ Expected response time:
 
 ```bash
 # Development
-npm run dev                 # Start all services
-npm run dev -- --api       # Start only API
+npm run dev:portals                 # Start all services
+npm run dev:portals -- --api       # Start only API
 
 # Testing
 npm run test               # Run all tests
@@ -691,7 +693,7 @@ gcloud builds submit --config cloudbuild.yaml --substitutions=_SERVICE_NAME=scho
 PROJECT_ID=your-gcp-project-id REGION=asia-south1 IMAGE_TAG=latest sh infrastructure/cloud-run/deploy-autoscaling.sh # Manual fallback
 
 # Database
-npx firebase emulators:start --only auth,firestore --project school-erp-dev # Start Firestore emulator
+npx firebase emulators:start --only firestore --project school-erp-dev # Start Firestore emulator
 npm run db:seed            # Seed test data
 npm run db:backup          # Backup Firestore
 
@@ -706,7 +708,7 @@ npm run docs:generate      # Generate API docs
 |------|---------|
 | `package.json` | Workspace dependencies & scripts |
 | `apps/api/package.json` | API-specific setup |
-| `apps/web/package.json` | Frontend-specific setup |
+| `apps/school/package.json` | School portal-specific setup |
 | `.env.example` | Environment variable template |
 | `jest.config.js` | Test runner configuration |
 | `.eslintrc.json` | Linting rules |
@@ -728,7 +730,7 @@ school-erp/                    (Monorepo root)
 │   │   │   └── models/        (Zod schemas)
 │   │   └── tests/            (API test suite)
 │   │
-│   └── web/                   (React frontend)
+│   ├── owner/`r`n│   └── src/`r`n│       └── ...`r`n├── employee/`r`n│   └── src/`r`n│       └── ...`r`n└── school/                   (React frontend)
 │       ├── src/
 │       │   ├── pages/        (Route pages)
 │       │   ├── components/   (React components)

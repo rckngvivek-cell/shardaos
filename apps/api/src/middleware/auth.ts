@@ -2,11 +2,12 @@ import type { Request, Response, NextFunction } from 'express';
 import type { TenantAuthUser } from '@school-erp/shared';
 import { isTenantRole } from '@school-erp/shared';
 import { env } from '../config/env.js';
-import { getFirebaseAuth } from '../lib/firebase.js';
 import { AppError } from '../errors/app-error.js';
 import { logger } from '../lib/logger.js';
+import { AuthService } from '../modules/auth/auth.service.js';
 
 const log = logger('auth');
+const authService = new AuthService();
 
 declare global {
   namespace Express {
@@ -20,36 +21,46 @@ declare global {
 export async function authMiddleware(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
     if (env.AUTH_MODE === 'dev') {
+      const roleHeader = typeof req.headers['x-dev-role'] === 'string'
+        ? req.headers['x-dev-role'].trim().toLowerCase()
+        : '';
+      const schoolIdHeader = typeof req.headers['x-school-id'] === 'string'
+        ? req.headers['x-school-id'].trim()
+        : '';
+      const emailHeader = typeof req.headers['x-dev-email'] === 'string'
+        ? req.headers['x-dev-email'].trim().toLowerCase()
+        : '';
+      const uidHeader = typeof req.headers['x-dev-uid'] === 'string'
+        ? req.headers['x-dev-uid'].trim()
+        : '';
+
+      // Local tenant development must preserve the employee role selected in
+      // the browser so the full request path reflects the correct workspace.
       req.user = {
-        uid: 'dev-user-001',
-        email: 'admin@dev.school',
-        role: 'school_admin',
-        schoolId: 'dev-school-001',
+        uid: uidHeader || 'dev-user-001',
+        email: emailHeader || 'admin@dev.school',
+        role: isTenantRole(roleHeader) ? roleHeader : 'school_admin',
+        schoolId: schoolIdHeader || 'dev-school-001',
         plane: 'tenant',
       };
       return next();
     }
 
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      throw new AppError(401, 'UNAUTHORIZED', 'Missing or invalid Authorization header');
+    const sessionUser = await authService.getSessionFromAccessToken(req.headers.authorization);
+    if (sessionUser.plane !== 'tenant') {
+      throw new AppError(403, 'TENANT_ONLY', 'Tenant authentication required');
     }
 
-    const token = authHeader.slice(7);
-    const auth = getFirebaseAuth();
-    const decoded = await auth.verifyIdToken(token);
-
-    const schoolId = decoded.schoolId ?? decoded.school_id ?? req.headers['x-school-id'];
-    if (!schoolId || typeof schoolId !== 'string') {
-      throw new AppError(403, 'SCHOOL_SCOPE_MISSING', 'Token must include schoolId claim');
+    const schoolId = sessionUser.schoolId;
+    if (!schoolId) {
+      throw new AppError(403, 'SCHOOL_SCOPE_MISSING', 'Token must include school scope');
     }
 
-    const claimRole = typeof decoded.role === 'string' ? decoded.role : undefined;
-    const role = claimRole && isTenantRole(claimRole) ? claimRole : 'student';
+    const role = isTenantRole(sessionUser.role) ? sessionUser.role : 'student';
 
     req.user = {
-      uid: decoded.uid,
-      email: decoded.email,
+      uid: sessionUser.uid,
+      email: sessionUser.email,
       role,
       schoolId,
       plane: 'tenant',

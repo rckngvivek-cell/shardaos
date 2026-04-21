@@ -162,7 +162,9 @@ function guessCategory(relPath) {
   if (relPath.startsWith('.github/workflows/')) return 'GitHub Actions';
   if (relPath.startsWith('.github/')) return 'GitHub';
   if (relPath.startsWith('apps/api/')) return 'API';
-  if (relPath.startsWith('apps/web/')) return 'Web';
+  if (relPath.startsWith('apps/owner/')) return 'Owner';
+  if (relPath.startsWith('apps/employee/')) return 'Employee';
+  if (relPath.startsWith('apps/school/')) return 'School';
   if (relPath.startsWith('apps/mobile/')) return 'Mobile';
   if (relPath.startsWith('packages/shared/')) return 'Shared';
   if (relPath.startsWith('docs/')) return 'Docs';

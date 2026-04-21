@@ -15,14 +15,23 @@ export function auditLogger(req: Request, res: Response, next: NextFunction): vo
   const platformUser = (req as Request & { platformUser?: PlatformAuthUser }).platformUser;
   const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? 'unknown';
   const userAgent = req.headers['user-agent'] ?? 'unknown';
+  let controllerAuditRecorded = false;
 
   // Attach audit helper to request
-  req.audit = async (action, targetType, targetId, metadata) =>
-    recordAudit(req, action, targetType, targetId, metadata);
+  req.audit = async (action, targetType, targetId, metadata) => {
+    controllerAuditRecorded = true;
+    await recordAudit(req, action, targetType, targetId, metadata);
+  };
 
-  // Log the raw request for every admin endpoint (auto-audit)
+  // Fall back to a generic request-level audit entry only when the controller
+  // did not record a more specific action. This keeps the timeline accurate and
+  // prevents double-counting employee and approval mutations.
   const autoAction = mapMethodToAction(req.method, req.path);
-  if (autoAction && platformUser) {
+  res.on('finish', () => {
+    if (!autoAction || !platformUser || controllerAuditRecorded || res.statusCode >= 400) {
+      return;
+    }
+
     const entry: Omit<AuditLog, 'id'> = {
       action: autoAction,
       performedBy: platformUser.uid,
@@ -35,14 +44,14 @@ export function auditLogger(req: Request, res: Response, next: NextFunction): vo
         method: req.method,
         path: req.path,
         requestId: req.requestId,
+        statusCode: res.statusCode,
       },
     };
 
-    // Fire-and-forget write — don't block the request
-    writeAuditLog(entry).catch((err) =>
+    void writeAuditLog(entry).catch((err) =>
       log.error('Failed to write audit log', { error: String(err) })
     );
-  }
+  });
 
   next();
 }
@@ -85,7 +94,10 @@ async function writeAuditLog(entry: Omit<AuditLog, 'id'>): Promise<void> {
 }
 
 function mapMethodToAction(method: string, path: string): AuditAction | null {
-  if (path.includes('/employees') && method === 'POST') return 'EMPLOYEE_CREATED';
+  if (path.includes('/employees/') && path.endsWith('/activate') && method === 'POST') return 'EMPLOYEE_REACTIVATED';
+  if (path.includes('/employees/') && path.endsWith('/sync') && method === 'POST') return 'EMPLOYEE_UPDATED';
+  if (path.includes('/employees/') && method === 'PATCH') return 'EMPLOYEE_UPDATED';
+  if (path === '/employees' && method === 'POST') return 'EMPLOYEE_CREATED';
   if (path.includes('/employees') && method === 'DELETE') return 'EMPLOYEE_DEACTIVATED';
   if (path.includes('/approvals') && path.includes('/approve') && method === 'POST') return 'APPROVAL_GRANTED';
   if (path.includes('/approvals') && path.includes('/deny') && method === 'POST') return 'APPROVAL_DENIED';

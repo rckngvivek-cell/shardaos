@@ -47,16 +47,24 @@ All code written for this repository must be production-grade.
 
 ## Canonical repo shape
 
-- Current runnable workspaces are `apps/api`, `apps/web`, `apps/mobile`, and `packages/shared`.
+- Current runnable workspaces are `apps/api`, `apps/owner`, `apps/employee`, `apps/school`, `apps/mobile`, and `packages/shared`.
 - There is no dedicated `apps/founder` workspace in the current baseline.
-- Founder-only capabilities currently live in the owner plane under `/api/owner` and `/owner` until a separate workspace is explicitly introduced.
+- Founder-only capabilities currently live in the owner plane under `/api/owner` and `apps/owner` until a separate workspace is explicitly introduced.
 - Canonical naming is `School ERP` for tenant-facing product surfaces, `ShardaOS` for the internal owner plane, and `@school-erp/*` for workspace packages.
 - Legacy `deerflow` names in Terraform and older deployment assets are draft infrastructure references only and are not the runtime source of truth.
+
+## Domain boundary rules
+
+- `Company employees` means internal company staff managed by the owner plane. These are platform employees, not school staff.
+- Company employee setup and management belongs under the internal ShardaOS owner plane, including `/api/owner/employees` and `/owner/employees`.
+- `School staff` is a separate tenant-school module with separate workflows, permissions, and dashboards. It must not be modeled as the company employee module.
+- When planning, naming, or implementing features, do not use the word `employee` for school staff without an explicit qualifier such as `platform employee`, `company employee`, or `school staff`.
+- The current active work on employee setup and management is for company employees only unless a future PRI slice explicitly introduces the separate school-staff module.
 
 ## Ownership for this scaffold
 
 - API and student module: Backend Agent
-- Web shell and student workspace: Frontend Agent
+- Owner, employee, and school portals: Frontend Agent
 - CI and runbooks: DevOps Agent
 - Test harness: QA Agent
 - Repo operating docs: Documentation Agent

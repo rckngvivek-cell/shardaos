@@ -3,11 +3,16 @@ import type { PlatformAuthUser, PlatformRole } from '@school-erp/shared';
 import type { AuditAction, AuditLog } from '@school-erp/shared';
 import { isPlatformRole } from '@school-erp/shared';
 import { env } from '../../config/env.js';
-import { getFirebaseAuth } from '../../lib/firebase.js';
 import { AppError } from '../../errors/app-error.js';
 import { logger } from '../../lib/logger.js';
+import { AuthService } from '../../modules/auth/auth.service.js';
+import { EmployeeRepository } from '../../modules/owner-plane/employees/employee.repository.js';
 
 const log = logger('owner-auth');
+const employeeRepository = new EmployeeRepository();
+const authService = new AuthService();
+const OWNER_FALLBACK_UID = process.env.VITE_DEV_OWNER_UID?.trim() || 'owner-local-bootstrap';
+const OWNER_FALLBACK_EMAIL = (process.env.VITE_DEV_OWNER_EMAIL ?? 'owner.local@shardaos.internal').trim().toLowerCase();
 
 declare global {
   namespace Express {
@@ -28,18 +33,21 @@ declare global {
  *
  * Security layers:
  *  1. IP whitelist (checked before any auth to reject unknown origins fast)
- *  2. Bearer token verification via Firebase Admin
+ *  2. Bearer token verification via first-party JWT
  *  3. Role must be a PlatformRole (owner | employee)
- *  4. MFA claim must be present in production
- *  5. Short-lived session enforcement
+ *  4. Employee tokens must still map to an active platform employee record
+ *  5. Short-lived platform access token enforcement
  */
 export async function ownerAuthMiddleware(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
+    const authHeader = req.headers.authorization;
+    const hasBearerToken = authHeader?.startsWith('Bearer ');
+
     // ── Dev mode bypass ──
-    if (env.AUTH_MODE === 'dev') {
+    if (env.AUTH_MODE === 'dev' && !hasBearerToken) {
       (req as Request & { platformUser: PlatformAuthUser }).platformUser = {
-        uid: 'dev-owner-001',
-        email: 'owner@shardaos.internal',
+        uid: OWNER_FALLBACK_UID,
+        email: OWNER_FALLBACK_EMAIL,
         role: 'owner',
         plane: 'platform',
       };
@@ -47,37 +55,40 @@ export async function ownerAuthMiddleware(req: Request, _res: Response, next: Ne
     }
 
     // ── Token extraction ──
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
+    if (!hasBearerToken) {
       throw new AppError(401, 'UNAUTHORIZED', 'Missing or invalid Authorization header');
     }
 
-    const token = authHeader.slice(7);
-    const auth = getFirebaseAuth();
-    const decoded = await auth.verifyIdToken(token);
+    const sessionUser = await authService.getSessionFromAccessToken(authHeader);
+    const decoded = await authService.getAccessTokenPayload(authHeader);
 
     // ── Role validation — must be platform role ──
-    const role = (decoded.role ?? decoded.custom_role) as string | undefined;
+    const role = sessionUser.role;
     if (!role || !isPlatformRole(role)) {
       log.warn('Non-platform role attempted admin access', {
-        uid: decoded.uid,
+        uid: sessionUser.uid,
         role: String(role),
         ip: req.ip,
       });
       throw new AppError(403, 'FORBIDDEN', 'Access restricted to platform personnel');
     }
 
-    // ── MFA enforcement (production only) ──
-    if (env.ADMIN_MFA_REQUIRED && env.NODE_ENV === 'production') {
-      const mfaVerified = decoded.mfa_verified === true || decoded.firebase?.sign_in_second_factor != null;
-      if (!mfaVerified) {
-        throw new AppError(403, 'MFA_REQUIRED', 'Multi-factor authentication is required for admin access');
+    // ── Employee access enforcement ──
+    if (role === 'employee') {
+      const employee = await employeeRepository.findByUid(sessionUser.uid);
+      if (!employee || !employee.isActive || !employee.platformAccessActive || employee.authProviderDisabled) {
+        log.warn('Inactive employee attempted platform access', {
+          uid: sessionUser.uid,
+          email: sessionUser.email,
+          ip: req.ip,
+        });
+        throw new AppError(403, 'EMPLOYEE_ACCESS_DISABLED', 'Platform employee access is disabled');
       }
     }
 
     // ── Session age check ──
-    const authTime = decoded.auth_time ? decoded.auth_time * 1000 : Date.now();
-    const sessionAgeMs = Date.now() - authTime;
+    const issuedAt = decoded.iat ? decoded.iat * 1000 : Date.now();
+    const sessionAgeMs = Date.now() - issuedAt;
     const maxSessionMs = env.ADMIN_SESSION_TIMEOUT_MIN * 60 * 1000;
     if (sessionAgeMs > maxSessionMs) {
       throw new AppError(401, 'SESSION_EXPIRED', 'Admin session has expired — please re-authenticate');
@@ -85,8 +96,8 @@ export async function ownerAuthMiddleware(req: Request, _res: Response, next: Ne
 
     // ── Set platform user on request ──
     (req as Request & { platformUser: PlatformAuthUser }).platformUser = {
-      uid: decoded.uid,
-      email: decoded.email ?? '',
+      uid: sessionUser.uid,
+      email: sessionUser.email ?? '',
       role: role as PlatformRole,
       plane: 'platform',
     };

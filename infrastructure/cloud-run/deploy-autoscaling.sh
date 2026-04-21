@@ -22,4 +22,4 @@ gcloud run deploy "${SERVICE_NAME}" \
   --concurrency 100 \
   --min-instances 0 \
   --max-instances 20 \
-  --set-env-vars "NODE_ENV=production,AUTH_MODE=firebase,PORT=3000"
+  --set-env-vars "NODE_ENV=production,AUTH_MODE=jwt,PORT=3000"
