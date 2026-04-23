@@ -7,8 +7,13 @@ param(
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $toolsDir = Join-Path $repoRoot '.tools'
 $apiHealthUrl = 'http://127.0.0.1:3000/api/health'
+$smtpHost = '127.0.0.1'
+$smtpPort = 1025
+$smtpInboxUrl = 'http://127.0.0.1:1080'
 $firestoreEmulatorHost = '127.0.0.1'
 $firestoreEmulatorPort = 8081
+$smtpStdoutLog = Join-Path $toolsDir 'smtp.log'
+$smtpStderrLog = Join-Path $toolsDir 'smtp.err.log'
 $apiStdoutLog = Join-Path $toolsDir 'portal-api.log'
 $apiStderrLog = Join-Path $toolsDir 'portal-api.err.log'
 $emulatorStdoutLog = Join-Path $toolsDir 'firebase-emulators.log'
@@ -194,6 +199,26 @@ function Ensure-Api {
   }
 }
 
+function Ensure-Smtp {
+  if (Test-TcpPort -targetHost $smtpHost -port $smtpPort) {
+    return $true
+  }
+
+  $command = "Set-Location -LiteralPath '$repoRoot'; npm run dev:smtp"
+  Start-BackgroundCommand -command $command -stdoutLog $smtpStdoutLog -stderrLog $smtpStderrLog
+
+  try {
+    Wait-ForCondition `
+      -condition { (Test-TcpPort -targetHost $smtpHost -port $smtpPort) -and (Test-HttpEndpoint $smtpInboxUrl) } `
+      -timeoutSeconds 30 `
+      -failureMessage "SMTP inbox did not start within 30 seconds. Check $smtpStdoutLog and $smtpStderrLog."
+    return $true
+  } catch {
+    Write-Warning $_.Exception.Message
+    return $false
+  }
+}
+
 function Ensure-OwnerSeed {
   if (-not (Test-TcpPort -targetHost $firestoreEmulatorHost -port $firestoreEmulatorPort)) {
     return $false
@@ -258,6 +283,7 @@ if (-not (Test-Path $toolsDir)) {
 $normalizedRoute = Normalize-Route $Route
 
 if ($App -eq 'all') {
+  $null = Ensure-Smtp
   $null = Ensure-Emulators
   $null = Ensure-Api
   $null = Ensure-OwnerSeed
@@ -273,6 +299,7 @@ if ($App -eq 'all') {
   return
 }
 
+$null = Ensure-Smtp
 $null = Ensure-Api
 
 if ($App -eq 'owner') {

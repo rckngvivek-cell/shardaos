@@ -22,6 +22,8 @@ npm run dev
 
 This starts:
 
+- MailDev SMTP at `127.0.0.1:1025`
+- MailDev inbox at `http://127.0.0.1:1080`
 - API at `http://localhost:3000`
 - Owner app at `http://localhost:5174/login`
 - Employee app at `http://localhost:5175/login`
@@ -33,6 +35,7 @@ You can also run the portals individually:
 npm run dev:owner
 npm run dev:employee
 npm run dev:school
+npm run dev:smtp
 ```
 
 Or start all three portals together:
@@ -59,6 +62,9 @@ The repo-root `.env` is the canonical local env file for:
 The current default local path stays simple:
 
 - `AUTH_MODE=dev`
+- `SMTP_HOST=127.0.0.1`
+- `SMTP_PORT=1025`
+- `SMTP_FROM_EMAIL=no-reply@shardaos.local`
 
 When you want the API to enforce bearer tokens end to end, switch to:
 
@@ -66,6 +72,14 @@ When you want the API to enforce bearer tokens end to end, switch to:
 - configure OTP email delivery through either:
   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS_FILE`, `SMTP_FROM_EMAIL`
   - or local file fallback in development, which writes OTP emails into `.tools/email-outbox`
+
+For local SMTP inspection, use MailDev:
+
+```bash
+npm run open:smtp
+```
+
+This opens the inbox UI at `http://127.0.0.1:1080`.
 
 To run the Firestore emulator baseline:
 
@@ -120,7 +134,7 @@ The API routes are:
 - `POST /api/auth/login/verify`
 - `POST /api/auth/login/resend`
 
-In development, if SMTP is not configured, the OTP email is written to `.tools/email-outbox` and the portal UI shows the outbox file hint.
+In development, the default local setup now routes OTP emails through MailDev. If SMTP is not configured, the API falls back to writing OTP emails into `.tools/email-outbox` and the portal UI shows the outbox file hint.
 
 ## Useful commands
 
