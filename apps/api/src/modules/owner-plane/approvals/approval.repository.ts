@@ -1,11 +1,11 @@
 import type { Approval, ApprovalStatus } from '@school-erp/shared';
-import { getFirestoreDb } from '../../../lib/firebase.js';
+import { getDocumentStore } from '../../../lib/document-store.js';
 
 const COLLECTION = 'platform_approvals';
 
 export class ApprovalRepository {
   private get col() {
-    return getFirestoreDb().collection(COLLECTION);
+    return getDocumentStore().collection(COLLECTION);
   }
 
   async list(status?: ApprovalStatus): Promise<Approval[]> {
@@ -24,10 +24,21 @@ export class ApprovalRepository {
     return doc.exists ? ({ id: doc.id, ...doc.data() } as Approval) : null;
   }
 
-  async updateDecision(id: string, status: 'approved' | 'denied', ownerUid: string): Promise<void> {
+  async create(data: Omit<Approval, 'id'>): Promise<Approval> {
+    const ref = await this.col.add(data);
+    return { id: ref.id, ...data };
+  }
+
+  async updateDecision(
+    id: string,
+    status: 'approved' | 'denied',
+    ownerUid: string,
+    decisionNote?: string,
+  ): Promise<void> {
     await this.col.doc(id).update({
       status,
       approvedBy: ownerUid,
+      decisionNote,
       updatedAt: new Date().toISOString(),
     });
   }

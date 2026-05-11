@@ -20,7 +20,7 @@ resource "google_access_context_manager_access_level" "corp_network" {
   }
 }
 
-# Service Perimeter for Firestore and Cloud Run
+# Service Perimeter for Cloud Run and storage
 resource "google_access_context_manager_service_perimeter" "deerflow" {
   parent         = "accessPolicies/${google_access_context_manager_access_policy.policy.name}"
   name           = "accessPolicies/${google_access_context_manager_access_policy.policy.name}/servicePerimeters/deerflow_perimeter"
@@ -31,7 +31,6 @@ resource "google_access_context_manager_service_perimeter" "deerflow" {
   status {
     restricted_services = [
       "storage.googleapis.com",
-      "firestore.googleapis.com",
       "cloudresourcemanager.googleapis.com",
     ]
 

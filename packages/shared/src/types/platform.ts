@@ -1,4 +1,5 @@
 import type { PlatformAuthUser, PlatformRole } from './user.js';
+import type { SchoolServicePlanTier } from './school.js';
 
 // ── Employee (onboarded by Owner) ──
 
@@ -42,6 +43,7 @@ export type AuditAction =
   | 'EMPLOYEE_UPDATED'
   | 'EMPLOYEE_DEACTIVATED'
   | 'EMPLOYEE_REACTIVATED'
+  | 'SCHOOL_ONBOARDING_REQUESTED'
   | 'SCHOOL_ONBOARDED'
   | 'SCHOOL_SUSPENDED'
   | 'APPROVAL_GRANTED'
@@ -69,16 +71,21 @@ export type ApprovalStatus = 'pending' | 'approved' | 'denied';
 
 export interface Approval {
   id: string;
-  type: 'school_onboarding' | 'employee_onboarding' | 'school_suspension' | 'exam_schedule';
+  type: 'school_onboarding' | 'employee_onboarding' | 'school_suspension' | 'exam_schedule' | 'admission_launch';
   status: ApprovalStatus;
   requestedBy: string; // employee uid
   requestedByEmail: string;
   approvedBy?: string; // owner uid
   title: string;
   description: string;
+  decisionNote?: string;
   metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ApprovalDecisionInput {
+  decisionNote?: string;
 }
 
 // ── Owner dashboard aggregate contract ──
@@ -151,6 +158,8 @@ export interface OwnerDashboardSchoolItem {
   code: string;
   city: string;
   state: string;
+  servicePlanTier: SchoolServicePlanTier;
+  enabledServiceCount: number;
   status: OwnerDashboardSchoolStatus;
   isActive: boolean;
   studentCount: number;

@@ -82,19 +82,6 @@ variable "cloud_run_cpu" {
   default     = "2"
 }
 
-# Firestore Configuration
-variable "firestore_retention_days" {
-  description = "Firestore data retention in days"
-  type        = number
-  default     = 90
-}
-
-variable "firestore_backup_schedule" {
-  description = "Firestore backup schedule (UTC cron)"
-  type        = string
-  default     = "0 2 * * *" # 2 AM UTC
-}
-
 # Database Configuration
 variable "cloudsql_instance_tier" {
   description = "Cloud SQL machine tier"

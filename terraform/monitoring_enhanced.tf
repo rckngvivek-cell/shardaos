@@ -261,10 +261,10 @@ resource "google_monitoring_alert_policy" "database_unavailable" {
   ]
 
   conditions {
-    display_name = "Firestore connection failures"
+    display_name = "Persistent store operation failures"
 
     condition_threshold {
-      filter          = "metric.type=\"firestore.googleapis.com/operation/failed\" AND resource.type=\"firestore_database\""
+      filter          = "metric.type=\"logging.googleapis.com/user/persistent_store_errors\" AND resource.type=\"cloud_run_revision\""
       duration        = "300s"
       comparison      = "COMPARISON_GT"
       threshold_value = 0.05  # 5% failure rate
@@ -281,7 +281,7 @@ resource "google_monitoring_alert_policy" "database_unavailable" {
   }
 
   documentation {
-    content   = "**DATABASE UNAVAILABLE**\n\n- Trigger regional failover\n- Check Firestore status page\n- Verify network connectivity\n- Contact GCP support if needed"
+    content   = "**DATABASE UNAVAILABLE**\n\n- Trigger regional failover\n- Check persistent store health\n- Verify network connectivity\n- Contact platform support if needed"
     mime_type = "text/markdown"
   }
 }
@@ -500,6 +500,6 @@ resource "google_monitoring_alert_policy" "region_failover" {
 # - active_student_count
 # - api_authentication_success_rate
 # - data_sync_success_rate
-# - firestore_read_latency_p95
-# - firestore_write_latency_p95
+# - persistent_store_read_latency_p95
+# - persistent_store_write_latency_p95
 

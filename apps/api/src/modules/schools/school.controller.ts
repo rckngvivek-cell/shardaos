@@ -12,3 +12,12 @@ export async function getMySchool(req: Request, res: Response, next: NextFunctio
     next(err);
   }
 }
+
+export async function getMySchoolServices(req: Request, res: Response, next: NextFunction) {
+  try {
+    const summary = await service.getServicesSummary(req.user!.schoolId);
+    res.json(successResponse(summary));
+  } catch (err) {
+    next(err);
+  }
+}

@@ -326,7 +326,7 @@ cloudArmor:
 
 ## Related Decisions
 
-- [ADR-001](./001-cloud-run-firestore-scalability.md): Auto-scaling infrastructure
-- [ADR-003](./003-firestore-replication.md): Failover procedures
+- ADR-001: Auto-scaling infrastructure
+- ADR-003: Failover procedures
 - [ADR-005](./005-staged-rollout-deployment.md): Canary deployment strategy
 

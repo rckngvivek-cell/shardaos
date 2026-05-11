@@ -1,10 +1,10 @@
 import type { AttendanceRecord, MarkAttendanceInput } from '@school-erp/shared';
-import { getFirestoreDb } from '../../lib/firebase.js';
+import { getDocumentStore, type DocumentQuery } from '../../lib/document-store.js';
 
 const COLLECTION = 'attendance';
 
 function schoolAttendanceRef(schoolId: string) {
-  return getFirestoreDb().collection('schools').doc(schoolId).collection(COLLECTION);
+  return getDocumentStore().collection('schools').doc(schoolId).collection(COLLECTION);
 }
 
 export class AttendanceRepository {
@@ -26,7 +26,7 @@ export class AttendanceRepository {
     schoolId: string,
     opts: { date?: string; grade?: string; section?: string; page: number; limit: number }
   ): Promise<{ records: AttendanceRecord[]; total: number }> {
-    let query: FirebaseFirestore.Query = schoolAttendanceRef(schoolId);
+    let query: DocumentQuery = schoolAttendanceRef(schoolId);
 
     if (opts.date) query = query.where('date', '==', opts.date);
 

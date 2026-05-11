@@ -1,12 +1,12 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { PlatformAuthUser, AuditAction, AuditLog } from '@school-erp/shared';
-import { getFirestoreDb } from '../../lib/firebase.js';
+import { getDocumentStore } from '../../lib/document-store.js';
 import { logger } from '../../lib/logger.js';
 
 const log = logger('audit');
 
 /**
- * Records every owner action to the `platform_audit_log` Firestore collection.
+ * Records every owner action to the `platform_audit_log` document collection.
  * This middleware runs AFTER owner-auth, so platformUser is guaranteed set.
  *
  * Also provides a helper `req.audit()` to log specific actions from controllers.
@@ -85,7 +85,7 @@ async function recordAudit(
 
 async function writeAuditLog(entry: Omit<AuditLog, 'id'>): Promise<void> {
   try {
-    const db = getFirestoreDb();
+    const db = getDocumentStore();
     await db.collection('platform_audit_log').add(entry);
   } catch (err) {
     // Structured logging — DO NOT throw; audit failures must not crash requests

@@ -9,6 +9,7 @@ import {
 } from 'react';
 import type {
   Approval,
+  ApprovalDecisionInput,
   ApprovalStatus,
   AuthSession,
   LoginOtpChallenge,
@@ -20,7 +21,10 @@ import type {
   OwnerDashboardSchoolItem,
   OwnerSecurityCenter,
   PlatformAuthUser,
+  School,
+  SchoolServicePlanTier,
   UpdateEmployeeInput,
+  UpdateSchoolServicePlanInput,
 } from '@school-erp/shared';
 import { BrowserRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { getApiData, sendApiData, sendApiVoid } from './lib/api';
@@ -51,6 +55,7 @@ const EMPTY_CREATE_FORM: CreateEmployeeInput = { uid: '', email: '', displayName
 const EMPTY_EDIT_FORM: UpdateEmployeeInput = { displayName: '', department: '' };
 const EMPLOYEE_FILTERS = ['all', 'active', 'inactive', 'review'] as const;
 const APPROVAL_FILTERS = ['pending', 'approved', 'denied', 'all'] as const;
+const SERVICE_PLAN_OPTIONS: SchoolServicePlanTier[] = ['basic', 'advanced'];
 const DEV_OWNER_DISPLAY_NAME = import.meta.env.VITE_DEV_OWNER_DISPLAY_NAME ?? 'Local Owner';
 const LEGACY_OWNER_SESSION_STORAGE_KEY = 'shardaos-owner-app-session';
 
@@ -217,6 +222,49 @@ function getOperationErrorMessage(error: unknown, fallback: string) {
   }
 
   return fallback;
+}
+
+function formatServicePlanTier(tier: SchoolServicePlanTier) {
+  return tier === 'advanced' ? 'Advanced' : 'Basic';
+}
+
+function getMetadataString(metadata: Record<string, unknown> | undefined, key: string): string | null {
+  const value = metadata?.[key];
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function getMetadataStringList(metadata: Record<string, unknown> | undefined, key: string): string[] {
+  const value = metadata?.[key];
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+}
+
+function getAdmissionLaunchSummary(approvals: Approval[]) {
+  const pendingAdmissionLaunches = approvals.filter(
+    (approval) => approval.type === 'admission_launch' && approval.status === 'pending',
+  );
+  const blockedSchools = new Set<string>();
+  const blockedClasses = new Set<string>();
+
+  pendingAdmissionLaunches.forEach((approval) => {
+    const schoolId = getMetadataString(approval.metadata, 'schoolId');
+    if (schoolId) {
+      blockedSchools.add(schoolId);
+    }
+
+    getMetadataStringList(approval.metadata, 'classesOpen').forEach((grade) => {
+      blockedClasses.add(schoolId ? `${schoolId}:${grade}` : grade);
+    });
+  });
+
+  return {
+    pendingLaunches: pendingAdmissionLaunches.length,
+    blockedSchools: blockedSchools.size,
+    blockedClasses: blockedClasses.size,
+  };
 }
 
 function getSeverityClasses(severity: OwnerDashboardAlertSeverity) {
@@ -1261,14 +1309,22 @@ function DashboardPage() {
   }
 
   const dashboard = state.data;
+  const admissionLaunchSummary = getAdmissionLaunchSummary(dashboard.approvals.priorityQueue);
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <StatCard label="Pending approvals" value={String(dashboard.overview.pendingApprovals)} detail="Requests still waiting for direct owner action." />
         <StatCard label="Active employees" value={String(dashboard.overview.activeEmployees)} detail="Platform staff currently carrying active access." />
         <StatCard label="MFA coverage" value={`${dashboard.overview.mfaCoveragePercent}%`} detail="Current MFA coverage across active owner-plane staff." />
         <StatCard label="Stale logins" value={String(dashboard.overview.staleLogins)} detail="Employee identities needing login or access review." />
+        <StatCard
+          label="Admission launches"
+          value={String(admissionLaunchSummary.pendingLaunches)}
+          detail={admissionLaunchSummary.pendingLaunches > 0
+            ? `${admissionLaunchSummary.blockedSchools} schools and ${admissionLaunchSummary.blockedClasses} classes are waiting for launch review.`
+            : 'No admission launches are waiting for owner review.'}
+        />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
@@ -1665,6 +1721,9 @@ function FinancePage() {
 
 function SchoolsPage() {
   const state = useOwnerResource<OwnerDashboard>('/api/owner/owner/dashboard');
+  const { getAccessToken, refreshData } = useOwnerAuth();
+  const [actionError, setActionError] = useState('');
+  const [actioningSchoolId, setActioningSchoolId] = useState<string | null>(null);
 
   if (state.status === 'loading') {
     return <LoadingState title="Loading school operations" detail="Gathering the live school portfolio for the owner plane." />;
@@ -1676,6 +1735,32 @@ function SchoolsPage() {
 
   const schools = state.data.schoolOperations;
 
+  async function handleServicePlanChange(school: OwnerDashboardSchoolItem, servicePlanTier: SchoolServicePlanTier) {
+    if (school.servicePlanTier === servicePlanTier) {
+      return;
+    }
+
+    setActionError('');
+    setActioningSchoolId(school.schoolId);
+
+    const body: UpdateSchoolServicePlanInput = { servicePlanTier };
+
+    try {
+      const token = await getAccessToken();
+      await sendApiData<School>(
+        `/api/owner/schools/${school.schoolId}/service-plan`,
+        'PATCH',
+        token,
+        body,
+      );
+      refreshData();
+    } catch (error) {
+      setActionError(getOperationErrorMessage(error, `Failed to set ${school.name} service plan`));
+    } finally {
+      setActioningSchoolId(null);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -1685,10 +1770,21 @@ function SchoolsPage() {
         <StatCard label="Operational exceptions" value={String(schools.exceptionCount)} detail="Schools showing stale attendance, grading, or approval issues." />
       </section>
 
+      {actionError ? (
+        <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+          {actionError}
+        </div>
+      ) : null}
+
       <SurfaceCard title="Portfolio health" eyebrow="Schools">
         <div className="grid gap-4 lg:grid-cols-2">
           {schools.schools.map((school) => (
-            <SchoolCard key={school.schoolId} school={school} />
+            <SchoolCard
+              key={school.schoolId}
+              school={school}
+              actioningSchoolId={actioningSchoolId}
+              onServicePlanChange={handleServicePlanChange}
+            />
           ))}
         </div>
       </SurfaceCard>
@@ -1696,7 +1792,17 @@ function SchoolsPage() {
   );
 }
 
-function SchoolCard({ school }: { school: OwnerDashboardSchoolItem }) {
+function SchoolCard({
+  school,
+  actioningSchoolId,
+  onServicePlanChange,
+}: {
+  school: OwnerDashboardSchoolItem;
+  actioningSchoolId: string | null;
+  onServicePlanChange: (school: OwnerDashboardSchoolItem, servicePlanTier: SchoolServicePlanTier) => void;
+}) {
+  const isActioning = actioningSchoolId === school.schoolId;
+
   return (
     <article className="rounded-[1.5rem] border border-white/10 bg-slate-950/50 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1714,8 +1820,31 @@ function SchoolCard({ school }: { school: OwnerDashboardSchoolItem }) {
       <div className="mt-4 grid gap-3 text-sm text-slate-300 sm:grid-cols-2">
         <p>Students: <span className="font-semibold text-white">{school.studentCount}</span></p>
         <p>Pending approvals: <span className="font-semibold text-white">{school.pendingApprovals}</span></p>
+        <p>Plan: <span className="font-semibold text-white">{formatServicePlanTier(school.servicePlanTier)}</span></p>
+        <p>Services: <span className="font-semibold text-white">{school.enabledServiceCount}</span></p>
         <p>Attendance: <span className="font-semibold text-white">{formatRelativeTime(school.lastAttendanceRecordedAt)}</span></p>
         <p>Grades: <span className="font-semibold text-white">{formatRelativeTime(school.lastGradePublishedAt)}</span></p>
+      </div>
+      <div className="mt-5 flex flex-wrap gap-2" aria-label={`Service plan controls for ${school.name}`}>
+        {SERVICE_PLAN_OPTIONS.map((option) => {
+          const isCurrent = school.servicePlanTier === option;
+          return (
+            <button
+              key={option}
+              type="button"
+              aria-label={`Set ${school.name} to ${formatServicePlanTier(option)} plan`}
+              onClick={() => onServicePlanChange(school, option)}
+              disabled={isCurrent || isActioning}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                isCurrent
+                  ? 'bg-cyan-400 text-slate-950'
+                  : 'border border-white/10 bg-white/5 text-slate-100 hover:border-cyan-300/40 hover:text-white'
+              } disabled:cursor-not-allowed disabled:opacity-70`}
+            >
+              {isActioning && !isCurrent ? 'Updating...' : formatServicePlanTier(option)}
+            </button>
+          );
+        })}
       </div>
     </article>
   );
@@ -2221,6 +2350,7 @@ function ApprovalsPage() {
   const [filter, setFilter] = useState<ApprovalFilter>('pending');
   const [actionId, setActionId] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
+  const [decisionNotes, setDecisionNotes] = useState<Record<string, string>>({});
   const state = useOwnerResource<Approval[]>(
     filter === 'all' ? '/api/owner/approvals' : `/api/owner/approvals?status=${filter}`,
   );
@@ -2234,6 +2364,9 @@ function ApprovalsPage() {
   }
 
   const approvals = state.data;
+  const admissionLaunchApprovals = approvals.filter((approval) => approval.type === 'admission_launch');
+  const genericApprovals = approvals.filter((approval) => approval.type !== 'admission_launch');
+  const admissionSummary = getAdmissionLaunchSummary(approvals);
 
   async function handleDecision(approval: Approval, decision: 'approve' | 'deny') {
     setActionError('');
@@ -2242,7 +2375,9 @@ function ApprovalsPage() {
     try {
       const token = await getAccessToken();
       const suffix = decision === 'approve' ? 'approve' : 'deny';
-      await sendApiData<Approval>(`/api/owner/approvals/${approval.id}/${suffix}`, 'POST', token);
+      const note = decisionNotes[approval.id]?.trim();
+      const body: ApprovalDecisionInput | undefined = note ? { decisionNote: note } : undefined;
+      await sendApiData<Approval>(`/api/owner/approvals/${approval.id}/${suffix}`, 'POST', token, body);
       refreshData();
     } catch (error) {
       setActionError(getOperationErrorMessage(error, `Failed to ${decision} approval`));
@@ -2283,15 +2418,142 @@ function ApprovalsPage() {
         </div>
       ) : null}
 
+      {admissionSummary.pendingLaunches > 0 ? (
+        <section className="grid gap-4 md:grid-cols-3">
+          <StatCard
+            label="Pending admission launches"
+            value={String(admissionSummary.pendingLaunches)}
+            detail="Admission sessions waiting for owner approval before a school can publish."
+          />
+          {admissionSummary.blockedSchools > 0 ? (
+            <StatCard
+              label="Approval-blocked schools"
+              value={String(admissionSummary.blockedSchools)}
+              detail="Schools with admission launch requests still blocked by owner approval."
+            />
+          ) : null}
+          {admissionSummary.blockedClasses > 0 ? (
+            <StatCard
+              label="Approval-blocked classes"
+              value={String(admissionSummary.blockedClasses)}
+              detail="Class launch windows listed in pending admission approval metadata."
+            />
+          ) : null}
+        </section>
+      ) : null}
+
       {approvals.length === 0 ? (
         <div className="rounded-[28px] border border-white/10 bg-white/5 px-4 py-12 text-center text-sm text-slate-300">
           No {filter === 'all' ? '' : filter} approvals found.
         </div>
       ) : (
         <div className="space-y-4">
-          {approvals.map((approval) => {
+          {admissionLaunchApprovals.length > 0 ? (
+            <section className="space-y-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan-300">Admissions oversight</p>
+                <h3 className="mt-1 text-xl font-semibold text-white">Admission launch approvals</h3>
+              </div>
+              {admissionLaunchApprovals.map((approval) => {
+                const schoolId = getMetadataString(approval.metadata, 'schoolId');
+                const sessionName = getMetadataString(approval.metadata, 'sessionName');
+                const academicYear = getMetadataString(approval.metadata, 'academicYear');
+                const classesOpen = getMetadataStringList(approval.metadata, 'classesOpen');
+
+                return (
+                  <article key={approval.id} className="rounded-[28px] border border-cyan-300/30 bg-cyan-400/10 p-6 shadow-[0_24px_80px_-56px_rgba(8,145,178,0.55)] backdrop-blur">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <h3 className="text-xl font-semibold text-white">{approval.title}</h3>
+                          <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${approval.status === 'pending' ? 'border-amber-400/30 bg-amber-500/10 text-amber-200' : approval.status === 'approved' ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200' : 'border-rose-400/30 bg-rose-500/10 text-rose-200'}`}>
+                            {approval.status}
+                          </span>
+                          <span className="rounded-full border border-cyan-300/30 bg-cyan-300/15 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-cyan-100">
+                            Admission launch
+                          </span>
+                        </div>
+                        <p className="text-sm leading-6 text-slate-200">{approval.description}</p>
+                        <div className="flex flex-wrap gap-4 text-sm text-slate-300">
+                          <span>Requested by {approval.requestedByEmail}</span>
+                          <span>Created {formatTimestamp(approval.createdAt)}</span>
+                          {schoolId ? <span>School {schoolId}</span> : null}
+                          {sessionName ? <span>Session {sessionName}</span> : null}
+                          {academicYear ? <span>Academic year {academicYear}</span> : null}
+                          {classesOpen.length > 0 ? <span>Classes {classesOpen.join(', ')}</span> : null}
+                        </div>
+                        {approval.decisionNote ? (
+                          <p className="rounded-2xl border border-cyan-300/20 bg-slate-950/40 px-4 py-3 text-sm leading-6 text-cyan-50">
+                            Owner note: {approval.decisionNote}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      {approval.status === 'pending' ? (
+                        <div className="min-w-[16rem] space-y-3 lg:w-72">
+                          <label htmlFor={`decision-note-${approval.id}`} className="block text-xs font-semibold uppercase tracking-[0.2em] text-cyan-100">
+                            Decision note
+                          </label>
+                          <textarea
+                            id={`decision-note-${approval.id}`}
+                            value={decisionNotes[approval.id] ?? ''}
+                            onChange={(event) => setDecisionNotes((current) => ({
+                              ...current,
+                              [approval.id]: event.target.value,
+                            }))}
+                            rows={3}
+                            className="w-full resize-none rounded-2xl border border-cyan-300/20 bg-slate-950/50 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300"
+                          />
+                          <div className="flex flex-wrap gap-3">
+                            <button
+                              type="button"
+                              aria-label={`Approve ${approval.title}`}
+                              onClick={() => {
+                                void handleDecision(approval, 'approve');
+                              }}
+                              disabled={actionId === approval.id}
+                              className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400 disabled:opacity-60"
+                            >
+                              {actionId === approval.id ? 'Working…' : 'Approve'}
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Deny ${approval.title}`}
+                              onClick={() => {
+                                void handleDecision(approval, 'deny');
+                              }}
+                              disabled={actionId === approval.id}
+                              className="rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-60"
+                            >
+                              {actionId === approval.id ? 'Working…' : 'Deny'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })}
+            </section>
+          ) : null}
+
+          {genericApprovals.length > 0 ? (
+            <section className="space-y-4">
+              {admissionLaunchApprovals.length > 0 ? (
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">General approvals</p>
+                  <h3 className="mt-1 text-xl font-semibold text-white">Other platform requests</h3>
+                </div>
+              ) : null}
+              {genericApprovals.map((approval) => {
             const schoolIdValue = approval.metadata?.schoolId;
             const schoolId = typeof schoolIdValue === 'string' ? schoolIdValue : null;
+            const servicePlanValue = approval.metadata?.servicePlanTier;
+            const servicePlanTier = servicePlanValue === 'basic' || servicePlanValue === 'advanced'
+              ? servicePlanValue
+              : null;
+            const enabledServiceKeys = approval.metadata?.enabledServiceKeys;
+            const enabledServiceCount = Array.isArray(enabledServiceKeys) ? enabledServiceKeys.length : null;
 
             return (
               <article key={approval.id} className="rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_-56px_rgba(15,23,42,0.55)] backdrop-blur">
@@ -2311,39 +2573,63 @@ function ApprovalsPage() {
                       <span>Requested by {approval.requestedByEmail}</span>
                       <span>Created {formatTimestamp(approval.createdAt)}</span>
                       {schoolId ? <span>School {schoolId}</span> : null}
+                      {servicePlanTier ? <span>{formatServicePlanTier(servicePlanTier)} plan</span> : null}
+                      {enabledServiceCount ? <span>{enabledServiceCount} services</span> : null}
                     </div>
+                    {approval.decisionNote ? (
+                      <p className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm leading-6 text-slate-200">
+                        Owner note: {approval.decisionNote}
+                      </p>
+                    ) : null}
                   </div>
 
                   {approval.status === 'pending' ? (
-                    <div className="flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        aria-label={`Approve ${approval.title}`}
-                        onClick={() => {
-                          void handleDecision(approval, 'approve');
-                        }}
-                        disabled={actionId === approval.id}
-                        className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400 disabled:opacity-60"
-                      >
-                        {actionId === approval.id ? 'Working…' : 'Approve'}
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Deny ${approval.title}`}
-                        onClick={() => {
-                          void handleDecision(approval, 'deny');
-                        }}
-                        disabled={actionId === approval.id}
-                        className="rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-60"
-                      >
-                        {actionId === approval.id ? 'Working…' : 'Deny'}
-                      </button>
+                    <div className="min-w-[16rem] space-y-3 lg:w-72">
+                      <label htmlFor={`decision-note-${approval.id}`} className="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
+                        Decision note
+                      </label>
+                      <textarea
+                        id={`decision-note-${approval.id}`}
+                        value={decisionNotes[approval.id] ?? ''}
+                        onChange={(event) => setDecisionNotes((current) => ({
+                          ...current,
+                          [approval.id]: event.target.value,
+                        }))}
+                        rows={3}
+                        className="w-full resize-none rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300"
+                      />
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          aria-label={`Approve ${approval.title}`}
+                          onClick={() => {
+                            void handleDecision(approval, 'approve');
+                          }}
+                          disabled={actionId === approval.id}
+                          className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400 disabled:opacity-60"
+                        >
+                          {actionId === approval.id ? 'Working…' : 'Approve'}
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Deny ${approval.title}`}
+                          onClick={() => {
+                            void handleDecision(approval, 'deny');
+                          }}
+                          disabled={actionId === approval.id}
+                          className="rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-60"
+                        >
+                          {actionId === approval.id ? 'Working…' : 'Deny'}
+                        </button>
+                      </div>
                     </div>
                   ) : null}
                 </div>
               </article>
             );
-          })}
+              })}
+            </section>
+          ) : null}
         </div>
       )}
     </div>

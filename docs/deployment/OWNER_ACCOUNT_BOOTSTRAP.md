@@ -13,14 +13,14 @@ The dedicated owner app exposes a secure browser bootstrap flow, but the API enf
 ## Preconditions
 
 - API reachable at `http://localhost:3000` or your chosen base URL
-- API process already configured for Firestore access
+- API process already configured with a writable persistent data store
 - `AUTH_MODE=jwt` when you want the API to enforce bearer tokens after bootstrap
 - `OWNER_BOOTSTRAP_KEY`, `OWNER_BOOTSTRAP_KEY_CREDENTIAL_TARGET`, or `OWNER_BOOTSTRAP_KEY_FILE` configured on the API process
 - optional `OWNER_BOOTSTRAP_SESSION_TTL_MIN` if you want to shorten or lengthen the bootstrap session lifetime
 - Owner login URL available at `http://localhost:5174/login` if you want to verify sign-in immediately
 
 The repo-root `.env` is no longer a supported place for bootstrap secrets or local auth passwords. Keep bootstrap secrets in the process environment, in Windows Credential Manager via `OWNER_BOOTSTRAP_KEY_CREDENTIAL_TARGET`, or in a file outside the repo and inject the path with `OWNER_BOOTSTRAP_KEY_FILE`.
-The included local `.env` only needs the Firestore emulator settings for emulator-backed bootstrap work.
+The included local `.env` only needs `DATA_STORE_FILE` when you want to override the default `.data/api-store.json` path.
 
 ## UI bootstrap flow
 
@@ -71,7 +71,7 @@ On success the service will:
 
 - create the platform owner credential in `auth_credentials`
 - hash the submitted password before it is stored
-- record that bootstrap has been consumed in Firestore bootstrap state
+- record that bootstrap has been consumed in the owner bootstrap state collection
 - delete the short-lived bootstrap session token used for the request
 - revoke existing platform sessions for that owner UID so old refresh tokens cannot linger
 - keep the owner identity scoped to `role=owner` and `plane=platform`
@@ -108,4 +108,4 @@ After a successful bootstrap:
 - Treat `OWNER_BOOTSTRAP_KEY` as a provisioning secret, not a normal application credential.
 - Even if the bootstrap key still exists in the process environment, the API will reject further use after the first successful bootstrap.
 - In production, keep `ADMIN_ALLOWED_IPS` and `ADMIN_MFA_REQUIRED` configured before granting owner-plane access.
-- Do not commit `GOOGLE_APPLICATION_CREDENTIALS`, passwords, or bootstrap keys into the repository.
+- Do not commit passwords, bootstrap keys, or local data-store files into the repository.

@@ -38,21 +38,99 @@ function loadRepoEnvironment() {
 
 loadRepoEnvironment();
 
-const { initializeApp, getApps } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
-
-const projectId = process.env.FIREBASE_PROJECT_ID || 'school-erp-dev';
 const ownerUid = process.env.VITE_DEV_OWNER_UID || 'owner-local-bootstrap';
 const ownerEmail = (process.env.VITE_DEV_OWNER_EMAIL || 'owner.local@shardaos.internal').toLowerCase();
 const ownerDisplayName = process.env.VITE_DEV_OWNER_DISPLAY_NAME || 'Local Owner';
 const tenantAdminEmail = (process.env.VITE_DEV_EMPLOYEE_EMAIL || 'admin@dev.school').toLowerCase();
 
-if (getApps().length === 0) {
-  initializeApp({ projectId });
-}
-
-const db = getFirestore();
+const repoRoot = path.resolve(__dirname, '..');
+const storeFile = process.env.DATA_STORE_FILE
+  ? path.resolve(process.env.DATA_STORE_FILE)
+  : path.join(repoRoot, '.data', 'api-store.json');
+const db = createSeedStore(storeFile);
 const SCRYPT_KEY_LENGTH = 64;
+
+function createSeedStore(filePath) {
+  const state = fs.existsSync(filePath)
+    ? JSON.parse(fs.readFileSync(filePath, 'utf8'))
+    : { version: 1, updatedAt: new Date().toISOString(), collections: {} };
+
+  function getCollection(pathValue) {
+    state.collections[pathValue] = state.collections[pathValue] || {};
+    return state.collections[pathValue];
+  }
+
+  class SeedDocument {
+    constructor(collectionPath, id) {
+      this.collectionPath = collectionPath;
+      this.id = id;
+    }
+
+    collection(name) {
+      return new SeedCollection(`${this.collectionPath}/${this.id}/${name}`);
+    }
+
+    async set(data, options = {}) {
+      const collection = getCollection(this.collectionPath);
+      collection[this.id] = options.merge ? { ...(collection[this.id] || {}), ...data } : { ...data };
+    }
+  }
+
+  class SeedQuery {
+    constructor(collectionPath, filters = [], limitCount = null) {
+      this.collectionPath = collectionPath;
+      this.filters = filters;
+      this.limitCount = limitCount;
+    }
+
+    where(field, operator, value) {
+      if (operator !== '==') {
+        throw new Error(`Unsupported seed query operator: ${operator}`);
+      }
+
+      return new SeedQuery(this.collectionPath, [...this.filters, { field, value }], this.limitCount);
+    }
+
+    limit(count) {
+      return new SeedQuery(this.collectionPath, this.filters, count);
+    }
+
+    async get() {
+      let docs = Object.entries(getCollection(this.collectionPath))
+        .filter(([, data]) => this.filters.every((filter) => data[filter.field] === filter.value))
+        .map(([id, data]) => ({ id, data: () => ({ ...data }) }));
+
+      if (this.limitCount != null) {
+        docs = docs.slice(0, this.limitCount);
+      }
+
+      return {
+        docs,
+        empty: docs.length === 0,
+        size: docs.length,
+      };
+    }
+  }
+
+  class SeedCollection extends SeedQuery {
+    constructor(collectionPath) {
+      super(collectionPath);
+    }
+
+    doc(id) {
+      return new SeedDocument(this.collectionPath, id);
+    }
+  }
+
+  return {
+    collection: (pathValue) => new SeedCollection(pathValue),
+    flush: () => {
+      state.updatedAt = new Date().toISOString();
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, `${JSON.stringify(state, null, 2)}\n`);
+    },
+  };
+}
 
 function daysAgo(days) {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
@@ -548,6 +626,8 @@ async function main() {
   for (const school of schools) {
     await setSchoolData(school);
   }
+
+  db.flush();
 
   console.log('Owner local stack seed completed.');
   console.log(`Schools: ${schools.length}`);

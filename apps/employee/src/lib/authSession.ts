@@ -73,6 +73,29 @@ async function requestAuth<T>(path: string, init: RequestInit): Promise<T> {
   return payload.data;
 }
 
+export async function requestPlatformApi<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const storedSession = loadStoredAuthSession();
+  if (!storedSession) {
+    throw new AuthHttpError('Employee session is required', 401, 'SESSION_REQUIRED');
+  }
+
+  const headers = new Headers(init.headers);
+  headers.set('Authorization', `Bearer ${storedSession.accessToken}`);
+
+  const response = await fetch(path, {
+    ...init,
+    headers,
+  });
+  const payload = await parseApiPayload<T>(response);
+
+  if (!response.ok || !payload?.success || payload.data === undefined) {
+    const message = payload?.error?.message ?? `Request failed with status ${response.status}`;
+    throw new AuthHttpError(message, response.status, payload?.error?.code);
+  }
+
+  return payload.data;
+}
+
 export function requestPlatformLoginChallenge(input: PlatformLoginInput): Promise<LoginOtpChallenge> {
   return requestAuth<LoginOtpChallenge>('/api/auth/platform/login', {
     method: 'POST',

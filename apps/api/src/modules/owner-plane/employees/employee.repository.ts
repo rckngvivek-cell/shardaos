@@ -1,11 +1,11 @@
 import type { Employee } from '@school-erp/shared';
-import { getFirestoreDb } from '../../../lib/firebase.js';
+import { getDocumentStore } from '../../../lib/document-store.js';
 
 const COLLECTION = 'platform_employees';
 
 export class EmployeeRepository {
   private get col() {
-    return getFirestoreDb().collection(COLLECTION);
+    return getDocumentStore().collection(COLLECTION);
   }
 
   async countActive(): Promise<number> {

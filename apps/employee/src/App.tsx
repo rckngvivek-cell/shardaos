@@ -6,7 +6,15 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { AuthSession, LoginOtpChallenge } from '@school-erp/shared';
+import * as Shared from '@school-erp/shared';
+import type {
+  Approval,
+  AuthSession,
+  CreateSchoolInput,
+  LoginOtpChallenge,
+  SchoolOnboardingRequestInput,
+  SchoolServicePlanTier,
+} from '@school-erp/shared';
 import { BrowserRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import {
   AuthHttpError,
@@ -18,6 +26,7 @@ import {
   restorePlatformSession,
   verifyPlatformLoginOtp,
 } from './lib/authSession';
+import { requestSchoolOnboarding } from './lib/schoolOnboardingApi';
 
 const employeeNavigation = [
   { label: 'Operations hub', path: '/' },
@@ -32,6 +41,18 @@ type EmployeeSession = {
   role: 'employee';
   plane: 'platform';
   displayName: string;
+};
+
+const emptySchoolOnboardingForm: CreateSchoolInput = {
+  name: '',
+  code: '',
+  address: '',
+  city: '',
+  state: '',
+  country: 'India',
+  phone: '',
+  email: '',
+  principalName: '',
 };
 
 interface EmployeeAuthContextValue {
@@ -113,6 +134,26 @@ function formatTimestamp(value: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
+}
+
+function normalizeSchoolForm(form: CreateSchoolInput): CreateSchoolInput {
+  return {
+    name: form.name.trim(),
+    code: form.code.trim().toUpperCase(),
+    address: form.address.trim(),
+    city: form.city.trim(),
+    state: form.state.trim(),
+    country: form.country.trim(),
+    phone: form.phone.trim(),
+    email: form.email.trim().toLowerCase(),
+    principalName: form.principalName.trim(),
+  };
+}
+
+function getMissingSchoolFields(school: CreateSchoolInput): string[] {
+  return Object.entries(school)
+    .filter(([, value]) => value.trim().length === 0)
+    .map(([key]) => key);
 }
 
 function buildEmployeeSession(authSession: AuthSession): EmployeeSession {
@@ -531,16 +572,153 @@ function QueuePage() {
 }
 
 function SchoolsPage() {
+  const [form, setForm] = useState<CreateSchoolInput>(emptySchoolOnboardingForm);
+  const [planTier, setPlanTier] = useState<SchoolServicePlanTier>('basic');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [submittedApproval, setSubmittedApproval] = useState<Approval | null>(null);
+  const enabledServiceKeys = Shared.getEnabledSchoolServiceKeysForPlan(planTier);
+  const enabledServices = Shared.SCHOOL_SERVICE_CATALOG.filter((service) => enabledServiceKeys.includes(service.key));
+
+  function updateField(field: keyof CreateSchoolInput, value: string) {
+    setForm((current) => ({
+      ...current,
+      [field]: field === 'code' ? value.toUpperCase() : value,
+    }));
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitError('');
+    setSubmittedApproval(null);
+
+    const school = normalizeSchoolForm(form);
+    const missingFields = getMissingSchoolFields(school);
+    if (missingFields.length > 0) {
+      setSubmitError('Complete every school profile field before sending this for owner approval.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const payload: SchoolOnboardingRequestInput = {
+        school,
+        servicePlanTier: planTier,
+        enabledServiceKeys,
+      };
+      const approval = await requestSchoolOnboarding(payload);
+      setSubmittedApproval(approval);
+      setForm(emptySchoolOnboardingForm);
+      setPlanTier('basic');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setSubmitError(message || 'Unable to create the school onboarding request.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <Shell
       eyebrow="School operations"
-      title="Schools needing employee follow-up"
-      description="This app gives platform employees a clear school-by-school work surface without exposing owner-only governance controls."
+      title="Create school onboarding requests for owner approval"
+      description="Platform employees prepare the complete school setup package here. The school is only activated after owner approval."
     >
-      <section className="grid gap-4 lg:grid-cols-3">
-        <LaneCard title="Lotus Public School" state="watch" detail="Attendance data has not synced in the last two school days." />
-        <LaneCard title="Bright Future Academy" state="setup" detail="Staff invitation and section roster import still need employee action." />
-        <LaneCard title="Riverdale Senior Secondary" state="healthy" detail="No operational blockers are open across enrollment, academics, or support." />
+      <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+        <form onSubmit={handleSubmit} className="rounded-[1.75rem] border border-amber-200 bg-white p-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label htmlFor="school-name" className="mb-2 block text-sm font-semibold text-slate-700">School name</label>
+              <input id="school-name" value={form.name} onChange={(event) => updateField('name', event.target.value)} className="w-full rounded-2xl border border-amber-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500" />
+            </div>
+            <div>
+              <label htmlFor="school-code" className="mb-2 block text-sm font-semibold text-slate-700">School code</label>
+              <input id="school-code" value={form.code} onChange={(event) => updateField('code', event.target.value)} className="w-full rounded-2xl border border-amber-200 px-4 py-3 text-sm uppercase outline-none transition focus:border-amber-500" />
+            </div>
+            <div>
+              <label htmlFor="principal-name" className="mb-2 block text-sm font-semibold text-slate-700">Principal name</label>
+              <input id="principal-name" value={form.principalName} onChange={(event) => updateField('principalName', event.target.value)} className="w-full rounded-2xl border border-amber-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500" />
+            </div>
+            <div>
+              <label htmlFor="school-email" className="mb-2 block text-sm font-semibold text-slate-700">School email</label>
+              <input id="school-email" type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} className="w-full rounded-2xl border border-amber-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500" />
+            </div>
+            <div>
+              <label htmlFor="school-phone" className="mb-2 block text-sm font-semibold text-slate-700">School phone</label>
+              <input id="school-phone" value={form.phone} onChange={(event) => updateField('phone', event.target.value)} className="w-full rounded-2xl border border-amber-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500" />
+            </div>
+            <div>
+              <label htmlFor="school-country" className="mb-2 block text-sm font-semibold text-slate-700">Country</label>
+              <input id="school-country" value={form.country} onChange={(event) => updateField('country', event.target.value)} className="w-full rounded-2xl border border-amber-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500" />
+            </div>
+            <div>
+              <label htmlFor="school-city" className="mb-2 block text-sm font-semibold text-slate-700">City</label>
+              <input id="school-city" value={form.city} onChange={(event) => updateField('city', event.target.value)} className="w-full rounded-2xl border border-amber-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500" />
+            </div>
+            <div>
+              <label htmlFor="school-state" className="mb-2 block text-sm font-semibold text-slate-700">State</label>
+              <input id="school-state" value={form.state} onChange={(event) => updateField('state', event.target.value)} className="w-full rounded-2xl border border-amber-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500" />
+            </div>
+            <div className="md:col-span-2">
+              <label htmlFor="school-address" className="mb-2 block text-sm font-semibold text-slate-700">Address</label>
+              <textarea id="school-address" value={form.address} onChange={(event) => updateField('address', event.target.value)} rows={3} className="w-full resize-none rounded-2xl border border-amber-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500" />
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {(['basic', 'advanced'] as const).map((tier) => (
+              <button
+                key={tier}
+                type="button"
+                aria-pressed={planTier === tier}
+                onClick={() => setPlanTier(tier)}
+                className={`rounded-2xl border p-4 text-left transition ${
+                  planTier === tier
+                    ? 'border-amber-500 bg-amber-50 text-slate-950'
+                    : 'border-amber-200 bg-white text-slate-700 hover:border-amber-400'
+                }`}
+              >
+                <span className="text-sm font-semibold">{Shared.SCHOOL_SERVICE_PLANS[tier]} plan</span>
+                <span className="mt-2 block text-xs leading-5 text-slate-600">
+                  {Shared.getEnabledSchoolServiceKeysForPlan(tier).length} services enabled on approval.
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {submitError ? (
+            <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {submitError}
+            </div>
+          ) : null}
+
+          {submittedApproval ? (
+            <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+              Request sent to owner approvals as {submittedApproval.title}.
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
+          >
+            {submitting ? 'Sending request…' : 'Submit for owner approval'}
+          </button>
+        </form>
+
+        <aside className="rounded-[1.75rem] border border-amber-200 bg-white/90 p-5">
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-amber-700">Selected package</p>
+          <h2 className="mt-3 text-2xl font-semibold text-slate-950">{Shared.SCHOOL_SERVICE_PLANS[planTier]} services</h2>
+          <div className="mt-5 space-y-3">
+            {enabledServices.map((service) => (
+              <div key={service.key} className="rounded-2xl border border-amber-100 bg-amber-50/60 px-4 py-3">
+                <p className="text-sm font-semibold text-slate-950">{service.name}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-600">{service.description}</p>
+              </div>
+            ))}
+          </div>
+        </aside>
       </section>
     </Shell>
   );

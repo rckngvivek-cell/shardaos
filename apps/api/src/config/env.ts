@@ -194,8 +194,7 @@ export const env = {
   NODE_ENV: process.env.NODE_ENV ?? 'development',
   PORT: parseInt(process.env.PORT ?? '3000', 10),
   AUTH_MODE: ((process.env.AUTH_MODE ?? 'dev') === 'dev' ? 'dev' : 'jwt') as 'dev' | 'jwt',
-  FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID ?? '',
-  GOOGLE_APPLICATION_CREDENTIALS: process.env.GOOGLE_APPLICATION_CREDENTIALS ?? '',
+  DATA_STORE_FILE: process.env.DATA_STORE_FILE ?? '',
 
   JWT_ACCESS_SECRET_FILE: process.env.JWT_ACCESS_SECRET_FILE ?? '',
   JWT_REFRESH_SECRET_FILE: process.env.JWT_REFRESH_SECRET_FILE ?? '',

@@ -17,8 +17,6 @@ docs/
 │
 ├── architecture/
 │   ├── ADR-001-CloudRun-vs-ManagedServices.md ✅
-│   ├── ADR-002-BigQuery-vs-Firestore.md ✅
-│   ├── ADR-003-Firestore-MultiRegion.md ✅
 │   ├── ADR-004-Dual-Channel-Notifications.md ✅
 │   ├── ADR-005-Redis-Caching.md ✅
 │   ├── ADR-006-Reporting-Module-Architecture.md (DRAFT - Week 7)
@@ -38,6 +36,9 @@ docs/
     ├── RB-009-Monitoring-Troubleshooting.md (DRAFT - Week 7)
     ├── RB-010-Release-Checklist.md (DRAFT - Week 7)
     └── README.md (Operations runbooks index)
+
+docs/modules/
+└── ADMISSION_CRM.md ✅ (Admission CRM workflow and API surface)
 
 releases/
 ├── WEEK5_RELEASE_NOTES.md
@@ -61,24 +62,16 @@ wiki/
 - ✅ Runbook Template with 8 sections
 - ✅ Release Notes Template with 9 sections
 
-### Architecture Decision Records (5/5+ Complete)
+### Architecture Decision Records (3/3+ Complete)
 1. ✅ **ADR-001:** Cloud Run vs Managed Services
    - Decision: Cloud Run as primary platform
    - Impact: 60% cost savings, 1-minute deployment
 
-2. ✅ **ADR-002:** BigQuery vs Firestore
-   - Decision: BigQuery for analytics, Firestore for operational data
-   - Impact: <2 second reports vs 15s before
-
-3. ✅ **ADR-003:** Firestore Multi-Region Replication
-   - Decision: India primary + US/Europe read replicas
-   - Impact: 99.95% uptime, disaster recovery
-
-4. ✅ **ADR-004:** SMS + Push Notification Dual-Channel
+2. ✅ **ADR-004:** SMS + Push Notification Dual-Channel
    - Decision: Push (app) + SMS (feature phones) + Email fallback
    - Impact: 100% reach vs 60% push-only
 
-5. ✅ **ADR-005:** Redis Caching for Report Generation
+3. ✅ **ADR-005:** Redis Caching for Report Generation
    - Decision: Cache reports for 10 min, pre-generate popular ones
    - Impact: <100ms dashboard vs 15s uncached
 
@@ -169,12 +162,10 @@ wiki/
 
 ### Google Cloud Platform
 - [Cloud Run Docs](https://cloud.google.com/run/docs)
-- [Firestore Multi-Region](https://cloud.google.com/firestore/docs/locations)
 - [BigQuery Analytics](https://cloud.google.com/bigquery/docs)
 - [Memorystore for Redis](https://cloud.google.com/memorystore/docs/redis)
 
 ### Notifications & Messaging
-- [Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging)
 - [Twilio SMS API](https://www.twilio.com/docs/sms)
 
 ### Version History

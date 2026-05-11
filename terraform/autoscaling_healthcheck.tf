@@ -437,28 +437,3 @@ resource "google_compute_managed_ssl_certificate" "api_cert" {
   }
 }
 
-# ============================================================================
-# FIRESTORE MULTI-REGION REPLICATION
-# ============================================================================
-
-resource "google_firestore_database" "database" {
-  project     = var.gcp_project_id
-  name        = "(default)"
-  location_id = "asia-south1"
-  type        = "FIRESTORE_NATIVE"
-
-  # Enable backup
-  backup_config {
-    point_in_time_recovery_enablement = "POINT_IN_TIME_RECOVERY_ENABLED"
-  }
-}
-
-# Scheduled backup policy
-resource "google_firestore_backup_schedule" "weekly_backup" {
-  project     = var.gcp_project_id
-  database    = google_firestore_database.database.name
-  location    = "asia-south1"
-  backup_retention_days = 14  # Keep 2 weeks of backups
-  daily_backup_config {}
-}
-

@@ -5,6 +5,11 @@ import { fileURLToPath, URL } from 'node:url';
 export default defineConfig({
   envDir: fileURLToPath(new URL('../../', import.meta.url)),
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@school-erp/shared': fileURLToPath(new URL('../../packages/shared/src/index.ts', import.meta.url)),
+    },
+  },
   test: {
     environment: 'jsdom',
     testTimeout: 20000,

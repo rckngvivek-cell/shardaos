@@ -117,21 +117,21 @@ async publishExamCreated(examData: any): Promise<string> {
 ```typescript
 // .env.development
 NODE_ENV=development        # Disables optional services
-STORAGE_DRIVER=memory       # Use in-memory Firestore emulator
+STORAGE_DRIVER=memory       # Use in-memory local data
 PUBSUB_ENABLED=false        # Disable Pub/Sub
 BIGQUERY_ENABLED=false      # Disable BigQuery
 CLOUD_LOGGING_ENABLED=false # Disable Cloud Logging
 
 // .env.staging
 NODE_ENV=staging            # Enable optional services
-STORAGE_DRIVER=firestore    # Use Cloud Firestore
+STORAGE_DRIVER=document     # Use configured document store
 PUBSUB_ENABLED=true
 BIGQUERY_ENABLED=true
 CLOUD_LOGGING_ENABLED=true
 
 // .env.production
 NODE_ENV=production         # All services required
-STORAGE_DRIVER=firestore
+STORAGE_DRIVER=document
 PUBSUB_ENABLED=true
 BIGQUERY_ENABLED=true
 CLOUD_LOGGING_ENABLED=true
@@ -183,7 +183,7 @@ CLOUD_LOGGING_ENABLED=true
 
 ## Implications for Future Services
 
-All new optional GCP services (Cloud Tasks, Firestore, Bigtable, etc.) must follow this pattern:
+All new optional GCP services (Cloud Tasks, Bigtable, etc.) must follow this pattern:
 
 ### Template for New Optional Service
 

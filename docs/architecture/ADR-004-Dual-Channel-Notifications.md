@@ -31,12 +31,12 @@
 ## Decision
 
 **Chosen:** Dual-channel notification strategy:
-- **Primary:** Push notifications via Firebase Cloud Messaging (FCM) for app users
+- **Primary:** Push notifications via a mobile push provider for app users
 - **Secondary:** SMS via Twilio for feature phone users
 - **Fallback:** Email for users with neither channel
 
 **Why:** Dual-channel ensures no one is left behind:
-1. **Push (primary):** Fast (instant), rich (with images/actions), cheap (free after Firebase setup)
+1. **Push (primary):** Fast (instant), rich (with images/actions), and cost efficient
 2. **SMS (secondary):** Reaches feature phones, higher open rates (80% vs 20% for email)
 3. **Fallback chain:** Email if both fail (ensures delivery)
 4. **Cost efficient:** ~₹2 per SMS (bulk) + free push
@@ -89,7 +89,7 @@ Event (exam result, attendance, fee due)
 Cloud Function detects event
   ↓
 Decision logic:
-  - Has smartphone + app installed? → Push via FCM
+  - Has smartphone + app installed? → Push via mobile push provider
   - No smartphone? → SMS via Twilio
   - Notification disabled? → Skip
   ↓
@@ -104,7 +104,7 @@ Log delivery status (retry if failed)
 - Default: Push + SMS (maximum reach)
 
 **Cost Structure:**
-- Push (FCM): Free (after Cloud Run setup)
+- Push: provider-dependent usage cost
 - SMS (Twilio): ₹2 per message (bulk rate with credits)
 - Email: <₹0.05 per message
 - Total estimate: ₹5K/month at 1000 parent base
@@ -118,7 +118,7 @@ Log delivery status (retry if failed)
 **Owner:** Backend Agent (with Product Agent requirement input)
 
 **Dependencies:**
-- ✅ Firebase Cloud Messaging setup (Week 3)
+- ✅ Mobile push provider setup
 - ✅ Twilio account + API integration
 - ✅ Notification content database
 - ✅ User preference management (database schema)
@@ -196,7 +196,6 @@ Log delivery status (retry if failed)
 
 ## References
 
-- [Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging)
 - [Twilio SMS API](https://www.twilio.com/docs/sms)
 - [Notification System Design](../43_STAFF_PORTAL_TECHNICAL_SPECS.md)
 - [Parent Portal Architecture](../21_FRONTEND_IMPLEMENTATION.md)

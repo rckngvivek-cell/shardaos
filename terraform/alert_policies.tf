@@ -418,40 +418,6 @@ resource "google_monitoring_alert_policy" "low_availability" {
   }
 }
 
-# Alert 13: Firestore Quota Warning
-resource "google_monitoring_alert_policy" "firestore_quota_warning" {
-  display_name          = "P2: Firestore Quota Approaching"
-  combiner              = "OR"
-  enabled               = true
-  notification_channels = [google_monitoring_notification_channel.email.name]
-
-  conditions {
-    display_name = "Firestore quota usage above 70%"
-
-    condition_threshold {
-      filter          = "resource.type=\"firestore_database\" AND metric.type=\"firestore.googleapis.com/quota_usage\""
-      duration        = "300s"
-      comparison      = "COMPARISON_GT"
-      threshold_value = 0.70
-
-      aggregations {
-        alignment_period    = "60s"
-        per_series_aligner  = "ALIGN_MEAN"
-        cross_series_reducer = "REDUCE_MEAN"
-      }
-
-      trigger {
-        count = 1
-      }
-    }
-  }
-
-  documentation {
-    content   = "Firestore quota usage exceeded 70%. Monitor write/read capacity and consider increasing allocations."
-    mime_type = "text/markdown"
-  }
-}
-
 # Alert 14: Long-running Queries (> 5 seconds)
 resource "google_monitoring_alert_policy" "long_running_queries" {
   display_name          = "P2: Long-running Queries Detected"
@@ -534,7 +500,6 @@ output "alert_policies" {
     google_monitoring_alert_policy.ddos_attack.name,
     google_monitoring_alert_policy.high_latency_p95.name,
     google_monitoring_alert_policy.low_availability.name,
-    google_monitoring_alert_policy.firestore_quota_warning.name,
     google_monitoring_alert_policy.long_running_queries.name,
     google_monitoring_alert_policy.notification_queue_buildup.name,
   ]

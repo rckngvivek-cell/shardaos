@@ -9,7 +9,7 @@
 
 ## Context
 
-**Background:** The reporting module generates key school dashboards: attendance trends, exam performance analysis, fee collection status, teacher workload reports. Each complex report requires aggregating 10,000+ Firestore/BigQuery records and computing statistics.
+**Background:** The reporting module generates key school dashboards: attendance trends, exam performance analysis, fee collection status, teacher workload reports. Each complex report requires aggregating 10,000+ operational/analytics records and computing statistics.
 
 **Problem Statement:** Report generation takes 10-15 seconds on first load. With 50+ school leaders checking reports simultaneously during morning peak, this creates 99.8% error rate and poor user experience.
 
@@ -33,7 +33,7 @@
 **Chosen:** Multi-layer caching strategy using Redis:
 - **Layer 1:** Generate reports on-demand, cache in Redis for 10 minutes
 - **Layer 2:** Pre-generate popular reports every 5 minutes
-- **Layer 3:** Firestore query results cached for specific schools
+- **Layer 3:** Operational query results cached for specific schools
 - **Cache invalidation:** Real-time update when source data changes
 
 **Why:** Redis balances speed and freshness:
@@ -66,7 +66,7 @@
    - ❌ Limited data types
    - ❌ Memorystore pricing same as Redis
 
-4. **Database views (Firestore/BigQuery)**
+4. **Database or warehouse views**
    - ✅ Always up-to-date
    - ❌ Still requires query execution
    - ❌ Similar latency to uncached queries
@@ -108,7 +108,7 @@ Cache all reports (TTL: 10 minutes)
 
 Layer 3 - Query result caching:
 ```
-Firestore queries cached for 5 minutes
+Operational queries cached for 5 minutes
   ↓
 Example: "Get all students in Class 10-A"
   ↓
@@ -129,7 +129,7 @@ query:{schoolId}:{entityType}:{entityId}
 ```
 
 **Configuration:**
-- Redis instance: `asia-south1` (same as Firestore)
+- Redis instance: `asia-south1`
 - Memory size: 4GB (covers 1000+ schools)
 - TTL (time-to-live): 10 minutes for reports, 5 minutes for queries
 - Eviction policy: LRU (least recently used)

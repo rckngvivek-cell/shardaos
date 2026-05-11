@@ -13,7 +13,6 @@
     "@school-erp/shared": "*",
     "dotenv": "^16.4.7",
     "express": "^5.2.1",
-    "firebase-admin": "^13.0.2",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^8.0.5",
     "uuid": "^9.0.1",

@@ -32,7 +32,7 @@ spec:
             - name: NODE_ENV
               value: "production"
             - name: AUTH_MODE
-              value: "firebase"
+              value: "jwt"
           livenessProbe:
             httpGet:
               path: /health/live

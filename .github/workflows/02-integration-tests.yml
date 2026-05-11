@@ -17,12 +17,6 @@ jobs:
     timeout-minutes: 45
     
     services:
-      firestore-emulator:
-        image: google/cloud-datastore-emulator:latest
-        ports:
-          - 8081:8081
-        options: --health-cmd="curl -f http://localhost:8081/ping || exit 1" --health-interval=10s --health-timeout=5s --health-retries=5
-      
       redis:
         image: redis:7-alpine
         ports:
@@ -35,7 +29,7 @@ jobs:
       pull-requests: write
 
     env:
-      FIRESTORE_EMULATOR_HOST: localhost:8081
+      DATA_STORE_FILE: ${{ runner.temp }}/school-erp-api-store.json
       REDIS_URL: redis://localhost:6379
 
     steps:
@@ -60,7 +54,6 @@ jobs:
       - name: Wait for services
         run: |
           npm install -g wait-on
-          wait-on http://localhost:8081/ping
           wait-on redis://localhost:6379
         timeout-minutes: 5
       

@@ -2,11 +2,14 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getEnabledSchoolServiceKeysForPlan } from '@school-erp/shared';
 
 import { App } from './App';
 import { clearStoredAuthSession } from './lib/authSession';
 
 const fetchMock = vi.fn();
+const basicServiceCount = getEnabledSchoolServiceKeysForPlan('basic').length;
+const advancedServiceCount = getEnabledSchoolServiceKeysForPlan('advanced').length;
 const ownerOtpChallenge = {
   challengeId: 'otp-challenge-1',
   plane: 'platform',
@@ -101,6 +104,24 @@ function buildOwnerDashboardFixture() {
       oldestPendingCreatedAt: '2026-04-19T10:00:00.000Z',
       priorityQueue: [
         {
+          id: 'approval-admission-1',
+          type: 'admission_launch',
+          status: 'pending',
+          requestedBy: 'school-user-1',
+          requestedByEmail: 'admissions@riverdale.example',
+          title: 'Launch admissions for 2026 Primary intake',
+          description: '2026-27 • 2 classes • riverdale',
+          metadata: {
+            schoolId: 'riverdale',
+            sessionId: 'admission-session-1',
+            sessionName: '2026 Primary intake',
+            academicYear: '2026-27',
+            classesOpen: ['Nursery', 'KG'],
+          },
+          createdAt: '2026-04-19T09:00:00.000Z',
+          updatedAt: '2026-04-19T09:00:00.000Z',
+        },
+        {
           id: 'approval-1',
           type: 'school_onboarding',
           status: 'pending',
@@ -127,6 +148,8 @@ function buildOwnerDashboardFixture() {
           code: 'NC01',
           city: 'Patna',
           state: 'Bihar',
+          servicePlanTier: 'basic',
+          enabledServiceCount: basicServiceCount,
           status: 'watch',
           isActive: true,
           studentCount: 1230,
@@ -142,6 +165,8 @@ function buildOwnerDashboardFixture() {
           code: 'RV11',
           city: 'Patna',
           state: 'Bihar',
+          servicePlanTier: 'advanced',
+          enabledServiceCount: advancedServiceCount,
           status: 'onboarding',
           isActive: true,
           studentCount: 800,
@@ -157,6 +182,8 @@ function buildOwnerDashboardFixture() {
           code: 'LG09',
           city: 'Gaya',
           state: 'Bihar',
+          servicePlanTier: 'basic',
+          enabledServiceCount: basicServiceCount,
           status: 'inactive',
           isActive: false,
           studentCount: 0,
@@ -174,6 +201,8 @@ function buildOwnerDashboardFixture() {
           code: 'NC01',
           city: 'Patna',
           state: 'Bihar',
+          servicePlanTier: 'basic',
+          enabledServiceCount: basicServiceCount,
           status: 'watch',
           isActive: true,
           studentCount: 1230,
@@ -189,6 +218,8 @@ function buildOwnerDashboardFixture() {
           code: 'RV11',
           city: 'Patna',
           state: 'Bihar',
+          servicePlanTier: 'advanced',
+          enabledServiceCount: advancedServiceCount,
           status: 'onboarding',
           isActive: true,
           studentCount: 800,
@@ -357,6 +388,17 @@ describe('owner app', () => {
     expect(window.localStorage.getItem('shardaos-owner-app-session')).toBeNull();
   });
 
+  it('shows admission launch signals on the owner command center', async () => {
+    queueSuccessfulLogin();
+    fetchMock.mockResolvedValueOnce(mockApiResponse(buildOwnerDashboardFixture()));
+
+    await renderProtectedRouteAndSignIn('/');
+
+    expect(await screen.findByText(/Admission launches/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 schools and 2 classes are waiting for launch review/i)).toBeInTheDocument();
+    expect(screen.getByText(/Launch admissions for 2026 Primary intake/i)).toBeInTheDocument();
+  });
+
   it('renders the dedicated finance dashboard for the owner app', async () => {
     queueSuccessfulLogin();
     fetchMock.mockResolvedValueOnce(mockApiResponse(buildOwnerDashboardFixture()));
@@ -371,6 +413,62 @@ describe('owner app', () => {
     expect(screen.getAllByText(/Riverdale Public School/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Healthy commercial coverage/i)).toBeInTheDocument();
     expect(screen.getByText(/Finance owns 25% of the current platform workforce/i)).toBeInTheDocument();
+  });
+
+  it('updates a school service plan from the owner schools page', async () => {
+    queueSuccessfulLogin();
+    const initialDashboard = buildOwnerDashboardFixture();
+    const updatedDashboard = buildOwnerDashboardFixture();
+    updatedDashboard.schoolOperations.schools[0].servicePlanTier = 'advanced';
+    updatedDashboard.schoolOperations.schools[0].enabledServiceCount = advancedServiceCount;
+
+    fetchMock
+      .mockResolvedValueOnce(mockApiResponse(initialDashboard))
+      .mockResolvedValueOnce(mockApiResponse({
+        id: 'north-campus',
+        name: 'North Campus',
+        code: 'NC01',
+        address: '1 North Road',
+        city: 'Patna',
+        state: 'Bihar',
+        country: 'India',
+        phone: '111',
+        email: 'north@example.com',
+        principalName: 'North Principal',
+        studentCount: 1230,
+        servicePlanTier: 'advanced',
+        enabledServiceKeys: [
+          'student_records',
+          'attendance',
+          'academics',
+          'transport',
+          'fee_collection',
+          'parent_portal',
+          'communications',
+          'analytics',
+        ],
+        isActive: true,
+        createdAt: '2026-04-19T10:00:00.000Z',
+        updatedAt: '2026-04-19T10:05:00.000Z',
+      }))
+      .mockResolvedValueOnce(mockApiResponse(updatedDashboard));
+
+    const user = await renderProtectedRouteAndSignIn('/schools');
+
+    const advancedButton = await screen.findByRole('button', { name: /Set North Campus to Advanced plan/i });
+    await user.click(advancedButton);
+
+    await waitFor(() => {
+      const updateCall = fetchMock.mock.calls.find(
+        ([url, init]) => url === '/api/owner/schools/north-campus/service-plan' && (init)?.method === 'PATCH',
+      );
+      expect(updateCall).toBeTruthy();
+      expect(JSON.parse(String(updateCall?.[1].body))).toEqual({ servicePlanTier: 'advanced' });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Set North Campus to Advanced plan/i })).toBeDisabled();
+    });
   });
 
   it('creates an employee from the dedicated owner app', async () => {
@@ -494,6 +592,24 @@ describe('owner app', () => {
       .mockResolvedValueOnce(
         mockApiResponse([
           {
+            id: 'approval-admission-1',
+            type: 'admission_launch',
+            status: 'pending',
+            requestedBy: 'school-user-1',
+            requestedByEmail: 'admissions@riverdale.example',
+            title: 'Launch admissions for 2026 Primary intake',
+            description: '2026-27 • 2 classes • riverdale',
+            metadata: {
+              schoolId: 'riverdale',
+              sessionId: 'admission-session-1',
+              sessionName: '2026 Primary intake',
+              academicYear: '2026-27',
+              classesOpen: ['Nursery', 'KG'],
+            },
+            createdAt: '2026-04-19T09:00:00.000Z',
+            updatedAt: '2026-04-19T09:00:00.000Z',
+          },
+          {
             id: 'approval-1',
             type: 'school_onboarding',
             status: 'pending',
@@ -525,6 +641,12 @@ describe('owner app', () => {
 
     const user = await renderProtectedRouteAndSignIn('/approvals');
 
+    expect(await screen.findByText(/Admission launch approvals/i)).toBeInTheDocument();
+    expect(screen.getByText(/Pending admission launches/i)).toBeInTheDocument();
+    expect(screen.getByText(/Approval-blocked schools/i)).toBeInTheDocument();
+    expect(screen.getByText(/Approval-blocked classes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Classes Nursery, KG/i)).toBeInTheDocument();
+
     const approvalHeading = await screen.findByRole('heading', { name: /North Campus onboarding/i });
     const approvalCard = approvalHeading.closest('article');
     expect(approvalCard).not.toBeNull();
@@ -535,6 +657,80 @@ describe('owner app', () => {
         ([url, init]) => url === '/api/owner/approvals/approval-1/approve' && (init)?.method === 'POST',
       );
       expect(approveCall).toBeTruthy();
+    });
+  });
+
+  it('sends owner decision notes when denying an admission launch', async () => {
+    queueSuccessfulLogin();
+
+    fetchMock
+      .mockResolvedValueOnce(
+        mockApiResponse([
+          {
+            id: 'approval-admission-1',
+            type: 'admission_launch',
+            status: 'pending',
+            requestedBy: 'school-user-1',
+            requestedByEmail: 'admissions@riverdale.example',
+            title: 'Launch admissions for 2026 Primary intake',
+            description: '2026-27 • 2 classes • riverdale',
+            metadata: {
+              schoolId: 'riverdale',
+              sessionId: 'admission-session-1',
+              sessionName: '2026 Primary intake',
+              academicYear: '2026-27',
+              classesOpen: ['Nursery', 'KG'],
+            },
+            createdAt: '2026-04-19T09:00:00.000Z',
+            updatedAt: '2026-04-19T09:00:00.000Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        mockApiResponse({
+          id: 'approval-admission-1',
+          type: 'admission_launch',
+          status: 'denied',
+          requestedBy: 'school-user-1',
+          requestedByEmail: 'admissions@riverdale.example',
+          title: 'Launch admissions for 2026 Primary intake',
+          description: '2026-27 • 2 classes • riverdale',
+          decisionNote: 'Add section-wise capacity evidence before launch.',
+          metadata: {
+            schoolId: 'riverdale',
+            sessionId: 'admission-session-1',
+            sessionName: '2026 Primary intake',
+            academicYear: '2026-27',
+            classesOpen: ['Nursery', 'KG'],
+          },
+          createdAt: '2026-04-19T09:00:00.000Z',
+          updatedAt: '2026-04-19T09:05:00.000Z',
+        }),
+      )
+      .mockResolvedValueOnce(mockApiResponse([]));
+
+    const user = await renderProtectedRouteAndSignIn('/approvals');
+
+    const admissionHeading = await screen.findByRole('heading', { name: /Launch admissions for 2026 Primary intake/i });
+    const admissionCard = admissionHeading.closest('article');
+    expect(admissionCard).not.toBeNull();
+
+    await user.type(
+      within(admissionCard as HTMLElement).getByLabelText(/Decision note/i),
+      'Add section-wise capacity evidence before launch.',
+    );
+    await user.click(within(admissionCard as HTMLElement).getByRole('button', {
+      name: /Deny Launch admissions for 2026 Primary intake/i,
+    }));
+
+    await waitFor(() => {
+      const denyCall = fetchMock.mock.calls.find(
+        ([url, init]) => url === '/api/owner/approvals/approval-admission-1/deny' && (init)?.method === 'POST',
+      );
+      expect(denyCall).toBeTruthy();
+      expect(JSON.parse(String(denyCall?.[1].body))).toEqual({
+        decisionNote: 'Add section-wise capacity evidence before launch.',
+      });
     });
   });
 });

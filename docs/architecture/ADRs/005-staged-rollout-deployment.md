@@ -74,7 +74,7 @@ Monitor for 1 hour
 
 **What runs:**
 - Unit tests (Jest, 1000+ tests)
-- Integration tests (Firestore, auth, APIs)
+- Integration tests (persistent data store, auth, APIs)
 - Linting (ESLint, TypeScript strict mode)
 - Security scan (OWASP, CVE check)
 - Build verification (no missing deps)
@@ -96,14 +96,14 @@ Monitor for 1 hour
 **What happens:**
 - Deploy image to staging Cloud Run
 - Staging is **exact replica** of production
-  - Same Firestore schema (test database)
+  - Same persistent data schema (test database)
   - Same Redis configuration
   - Same load balancer rules
   - Same monitoring dashboards
 
 **Smoke tests after deployment:**
 - Server health check (200 OK)
-- Database connectivity (Firestore query <100ms)
+- Database connectivity (persistent-store query <100ms)
 - Auth integration (test login → JWT)
 - API endpoints (all responding <1s)
 
@@ -140,7 +140,7 @@ Cloud Load Balancer routes:
 - Error rate (target: <0.1%)
 - Latency p95 (target: <400ms)
 - CPU/memory usage (target: <70%)
-- Firestore quota errors (target: 0)
+- Persistent-store errors (target: 0)
 
 **Decisions (after 5 minutes):**
 
@@ -173,7 +173,7 @@ Error detected → Cloud Monitoring trigger
 **Monitoring (5 minute window):**
 - Same metrics as Stage 3
 - Expanded to check cross-service interactions
-- Verify Firestore quota holding steady
+- Verify persistent-store error rate remains steady
 
 **Decision:** If metrics green → proceed to 50%, else rollback
 
@@ -288,7 +288,7 @@ kubectl patch ksvc school-erp-api --type merge -p '{"spec":{"traffic":[{"revisio
 - Error rate >0.5%
 - Latency p95 >1000ms
 - Memory >85%
-- Firestore quota errors
+- Persistent-store errors
 - Any critical alert
 
 **Process:**
@@ -369,7 +369,7 @@ gcloud run services describe school-erp-api \
 
 ## Related Decisions
 
-- [ADR-001](./001-cloud-run-firestore-scalability.md): Cloud Run auto-scaling
+- ADR-001: Cloud Run auto-scaling
 - [ADR-004](./004-rate-limiting-ddos-protection.md): Rate limiting during spike traffic
-- [ADR-003](./003-firestore-replication.md): Multi-region failover (backup to us-central1)
+- ADR-003: Multi-region failover
 

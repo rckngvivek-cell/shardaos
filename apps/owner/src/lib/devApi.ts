@@ -16,6 +16,7 @@ import type {
   OwnerSecurityFinding,
   OwnerSecurityTimelineItem,
   PlatformAuthUser,
+  UpdateSchoolServicePlanInput,
   UpdateEmployeeInput,
 } from '@school-erp/shared';
 
@@ -37,6 +38,34 @@ interface OwnerLocalDataState {
 const DEV_OWNER_EMAIL = (import.meta.env.VITE_DEV_OWNER_EMAIL ?? 'owner.local@shardaos.internal').toLowerCase();
 const OWNER_STATE_STORAGE_KEY = 'shardaos-owner-app-local-data';
 const OWNER_UID = import.meta.env.VITE_DEV_OWNER_UID ?? 'owner-local-bootstrap';
+const DEV_BASIC_SERVICE_KEYS = [
+  'student_records',
+  'attendance',
+  'academics',
+  'homework',
+  'lesson_plans',
+  'academic_calendar',
+  'notice_board',
+] as const;
+const DEV_ADVANCED_SERVICE_KEYS = [
+  ...DEV_BASIC_SERVICE_KEYS,
+  'transport',
+  'fee_collection',
+  'parent_portal',
+  'communications',
+  'analytics',
+  'school_staff',
+  'payroll',
+  'library',
+  'inventory',
+  'online_exam',
+  'report_cards',
+  'admission_crm',
+  'accounting',
+  'website_manager',
+  'e_content',
+  'certificates',
+] as const;
 
 function hoursAgo(hours: number) {
   return new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
@@ -44,6 +73,16 @@ function hoursAgo(hours: number) {
 
 function daysAgo(days: number) {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function getDevEnabledServiceCount(servicePlanTier: 'basic' | 'advanced', configuredKeys?: unknown[]) {
+  const allowedKeys = servicePlanTier === 'advanced' ? DEV_ADVANCED_SERVICE_KEYS : DEV_BASIC_SERVICE_KEYS;
+  const allowed = new Set<string>(allowedKeys);
+  const configured = Array.isArray(configuredKeys)
+    ? configuredKeys.filter((key): key is string => typeof key === 'string' && allowed.has(key))
+    : [];
+
+  return configured.length > 0 ? configured.length : allowedKeys.length;
 }
 
 function createOwnerProfile(): PlatformAuthUser {
@@ -133,6 +172,24 @@ function createSeedState(): OwnerLocalDataState {
     ],
     approvals: [
       {
+        id: 'approval-admission-riverdale',
+        type: 'admission_launch',
+        status: 'pending',
+        requestedBy: 'school-user-riverdale',
+        requestedByEmail: 'admissions@riverdale.school',
+        title: 'Launch admissions for 2026 Primary intake',
+        description: '2026-27 • 2 classes • school-riverdale',
+        metadata: {
+          schoolId: 'school-riverdale',
+          sessionId: 'admission-session-riverdale',
+          sessionName: '2026 Primary intake',
+          academicYear: '2026-27',
+          classesOpen: ['Nursery', 'KG'],
+        },
+        createdAt: hoursAgo(12),
+        updatedAt: hoursAgo(12),
+      },
+      {
         id: 'approval-school-riverdale',
         type: 'school_onboarding',
         status: 'pending',
@@ -189,6 +246,8 @@ function createSeedState(): OwnerLocalDataState {
         code: 'NC01',
         city: 'Patna',
         state: 'Bihar',
+        servicePlanTier: 'basic',
+        enabledServiceCount: getDevEnabledServiceCount('basic'),
         status: 'watch',
         isActive: true,
         studentCount: 1230,
@@ -204,6 +263,8 @@ function createSeedState(): OwnerLocalDataState {
         code: 'RV11',
         city: 'Patna',
         state: 'Bihar',
+        servicePlanTier: 'advanced',
+        enabledServiceCount: getDevEnabledServiceCount('advanced'),
         status: 'onboarding',
         isActive: true,
         studentCount: 800,
@@ -219,6 +280,8 @@ function createSeedState(): OwnerLocalDataState {
         code: 'GW07',
         city: 'Ranchi',
         state: 'Jharkhand',
+        servicePlanTier: 'advanced',
+        enabledServiceCount: getDevEnabledServiceCount('advanced'),
         status: 'healthy',
         isActive: true,
         studentCount: 980,
@@ -234,6 +297,8 @@ function createSeedState(): OwnerLocalDataState {
         code: 'LG09',
         city: 'Gaya',
         state: 'Bihar',
+        servicePlanTier: 'basic',
+        enabledServiceCount: getDevEnabledServiceCount('basic'),
         status: 'inactive',
         isActive: false,
         studentCount: 0,
@@ -394,7 +459,12 @@ function resolveActivityTone(action: AuditAction): OwnerDashboardActivityTone {
     return 'positive';
   }
 
-  if (action === 'APPROVAL_DENIED' || action === 'EMPLOYEE_DEACTIVATED' || action === 'SETTINGS_CHANGED') {
+  if (
+    action === 'APPROVAL_DENIED'
+    || action === 'EMPLOYEE_DEACTIVATED'
+    || action === 'SCHOOL_ONBOARDING_REQUESTED'
+    || action === 'SETTINGS_CHANGED'
+  ) {
     return 'warning';
   }
 
@@ -415,6 +485,10 @@ function formatActionTitle(action: AuditAction, targetId?: string) {
       return 'Platform employee deactivated';
     case 'EMPLOYEE_REACTIVATED':
       return 'Platform employee reactivated';
+    case 'SCHOOL_ONBOARDING_REQUESTED':
+      return 'School onboarding requested';
+    case 'SCHOOL_ONBOARDED':
+      return 'School onboarded';
     case 'SETTINGS_CHANGED':
       return 'Platform settings changed';
     default:
@@ -436,6 +510,10 @@ function formatActionDetail(action: AuditAction, targetId?: string) {
       return 'Platform access was disabled for an employee record.';
     case 'EMPLOYEE_REACTIVATED':
       return 'Platform access was restored for an employee record.';
+    case 'SCHOOL_ONBOARDING_REQUESTED':
+      return 'A platform employee requested owner approval for a new school.';
+    case 'SCHOOL_ONBOARDED':
+      return 'A school was activated after owner approval.';
     case 'SETTINGS_CHANGED':
       return 'Sensitive owner-plane settings were changed.';
     default:
@@ -717,6 +795,15 @@ function parseApprovalAction(pathname: string) {
   return { approvalId: match[1], action: match[2] };
 }
 
+function parseSchoolServicePlan(pathname: string) {
+  const match = pathname.match(/^\/api\/owner\/schools\/([^/]+)\/service-plan$/);
+  if (!match) {
+    return null;
+  }
+
+  return { schoolId: match[1] };
+}
+
 function createEmployee(state: OwnerLocalDataState, body: unknown) {
   const input = body as { uid?: string; email?: string; displayName?: string; department?: string };
   const timestamp = new Date().toISOString();
@@ -808,14 +895,36 @@ function syncEmployee(state: OwnerLocalDataState, employeeId: string) {
   return employee;
 }
 
-function decideApproval(state: OwnerLocalDataState, approvalId: string, status: ApprovalStatus) {
+function updateSchoolServicePlan(state: OwnerLocalDataState, schoolId: string, body: unknown) {
+  const input = body as UpdateSchoolServicePlanInput;
+  const school = state.schools.find((item) => item.schoolId === schoolId);
+  if (!school) {
+    throw new Error('School not found');
+  }
+
+  const servicePlanTier = input.servicePlanTier === 'advanced' ? 'advanced' : 'basic';
+  school.servicePlanTier = servicePlanTier;
+  school.enabledServiceCount = getDevEnabledServiceCount(servicePlanTier, input.enabledServiceKeys);
+
+  appendAuditLog(state, 'SETTINGS_CHANGED', 'school', school.schoolId, {
+    servicePlanTier,
+    enabledServiceCount: school.enabledServiceCount,
+  });
+  persistLocalState(state);
+  return school;
+}
+
+function decideApproval(state: OwnerLocalDataState, approvalId: string, status: ApprovalStatus, body?: unknown) {
   const approval = state.approvals.find((item) => item.id === approvalId);
   if (!approval) {
     throw new Error('Approval not found');
   }
 
+  const input = body as { decisionNote?: string } | undefined;
+  const decisionNote = input?.decisionNote?.trim();
   approval.status = status;
   approval.approvedBy = OWNER_UID;
+  approval.decisionNote = decisionNote || undefined;
   approval.updatedAt = new Date().toISOString();
 
   const schoolId = typeof approval.metadata?.schoolId === 'string' ? approval.metadata.schoolId : undefined;
@@ -842,7 +951,7 @@ function decideApproval(state: OwnerLocalDataState, approvalId: string, status: 
     status === 'approved' ? 'APPROVAL_GRANTED' : 'APPROVAL_DENIED',
     schoolId ? 'school' : undefined,
     schoolId,
-    { approvalId },
+    { approvalId, decisionNote: approval.decisionNote },
   );
   persistLocalState(state);
   return approval;
@@ -924,7 +1033,17 @@ export function handleLocalOwnerRequest<T>(path: string, options: ApiRequestOpti
 
   const approvalMatch = parseApprovalAction(pathname);
   if (approvalMatch && method === 'POST') {
-    return decideApproval(state, approvalMatch.approvalId, approvalMatch.action === 'approve' ? 'approved' : 'denied') as T;
+    return decideApproval(
+      state,
+      approvalMatch.approvalId,
+      approvalMatch.action === 'approve' ? 'approved' : 'denied',
+      options.body,
+    ) as T;
+  }
+
+  const schoolServicePlanMatch = parseSchoolServicePlan(pathname);
+  if (schoolServicePlanMatch && method === 'PATCH') {
+    return updateSchoolServicePlan(state, schoolServicePlanMatch.schoolId, options.body) as T;
   }
 
   throw new Error(`No local owner fallback exists for ${method} ${pathname}`);

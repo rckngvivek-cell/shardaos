@@ -66,7 +66,7 @@
 4. **AWS Lambda**
    - ✅ Similar benefits to Cloud Run
    - ❌ Triggers ecosystem more complex
-   - ❌ Team comfort with GCP (Firebase Realtime DB, Firestore expertise)
+   - ❌ Team comfort with GCP managed services
    - ❌ Higher latency from India (AWS region too far)
 
 **Trade-offs:**
@@ -81,7 +81,7 @@
 1. Containerize all backend services (Node.js/Express in Docker)
 2. Deploy to Cloud Run using GitHub Actions CI/CD pipeline
 3. Use Cloud Tasks for async processing (report generation, SMS sending, data syncs)
-4. CloudSQL for transaction DB, Firestore for user-facing data
+4. CloudSQL for transaction DB and the API document store for local development data
 5. Redis (managed Memorystore) for caching and real-time features
 
 **Timeline:**
@@ -135,7 +135,6 @@
 ## Related Decisions
 
 - Relates to: [ADR-002] BigQuery Analytics Architecture
-- Relates to: [ADR-003] Firestore Replication Strategy
 - Supersedes: None (this is foundational)
 
 ---

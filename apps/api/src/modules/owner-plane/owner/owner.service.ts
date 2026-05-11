@@ -21,6 +21,10 @@ import type {
   PlatformAuthUser,
   School,
 } from '@school-erp/shared';
+import {
+  getEnabledSchoolServiceKeysForPlan,
+  normalizeSchoolServicePlanTier,
+} from '@school-erp/shared';
 import { EmployeeService } from '../employees/employee.service.js';
 import { ApprovalService } from '../approvals/approval.service.js';
 import { SchoolRepository } from '../../schools/school.repository.js';
@@ -357,12 +361,17 @@ export class OwnerService {
       lastGradePublishedAt,
     });
 
+    const servicePlanTier = normalizeSchoolServicePlanTier(school.servicePlanTier);
+    const enabledServiceKeys = getEnabledSchoolServiceKeysForPlan(servicePlanTier, school.enabledServiceKeys);
+
     return {
       schoolId: school.id,
       name: school.name,
       code: school.code,
       city: school.city,
       state: school.state,
+      servicePlanTier,
+      enabledServiceCount: enabledServiceKeys.length,
       status,
       isActive: school.isActive,
       studentCount,
@@ -623,6 +632,13 @@ export class OwnerService {
           tone: 'warning',
           title: 'Approval denied',
           detail: `${actor} denied ${targetLabel}.${detailSuffix}`,
+        };
+      case 'SCHOOL_ONBOARDING_REQUESTED':
+        return {
+          ...entry,
+          tone: 'warning',
+          title: 'School onboarding requested',
+          detail: `${actor} requested owner approval for ${targetLabel}.${detailSuffix}`,
         };
       case 'SCHOOL_ONBOARDED':
         return {

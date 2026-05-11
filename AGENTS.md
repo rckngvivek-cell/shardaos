@@ -5,7 +5,7 @@ This repository encodes the multi-agent workflow from the planning documents in 
 ## Active roles
 
 - `Lead Architect`: owns scope, reviews plans, enforces PRI, approves architecture changes.
-- `Backend Agent`: owns API, Firestore integration, auth, validation, and service boundaries.
+- `Backend Agent`: owns API, document persistence, auth, validation, and service boundaries.
 - `Frontend Agent`: owns React shell, Redux/RTK Query, design system usage, and responsive UX.
 - `Data Agent`: owns analytics contracts, future BigQuery sync, reporting, and automation data models.
 - `DevOps Agent`: owns CI, runtime environments, Cloud Run, monitoring, and local tooling.

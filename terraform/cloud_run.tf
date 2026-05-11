@@ -7,20 +7,6 @@ resource "google_service_account" "cloud_run" {
   depends_on = [google_project_service.required_apis["iam.googleapis.com"]]
 }
 
-# Service Account for Firestore access
-resource "google_service_account" "firestore_accessor" {
-  account_id   = "${local.app_name}-firestore-accessor"
-  display_name = "Firestore Database Accessor"
-  description  = "Service account for Firestore database access"
-}
-
-# IAM Binding - Cloud Run Service Account
-resource "google_project_iam_member" "cloud_run_firestore" {
-  project = var.project_id
-  role    = "roles/datastore.user"
-  member  = "serviceAccount:${google_service_account.cloud_run.email}"
-}
-
 resource "google_project_iam_member" "cloud_run_gcs" {
   project = var.project_id
   role    = "roles/storage.objectUser"

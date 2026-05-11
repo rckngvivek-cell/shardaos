@@ -1,8 +1,8 @@
 # NEW TEAM ONBOARDING GUIDE
 
-**Version:** 1.0  
-**Date:** May 9, 2026  
-**Last Updated:** May 9, 2026  
+**Version:** 1.0
+**Date:** May 9, 2026
+**Last Updated:** May 9, 2026
 **Owner:** Documentation Agent
 
 ## Welcome to School ERP! 👋
@@ -31,7 +31,7 @@ This guide will get you up and running in **30 minutes**. Whether you're a backe
 - **Node.js:** 18.x LTS or higher
 - **npm:** 9.x or higher
 - **Git:** 2.30+
-- **Docker:** 20.10+ (for Firestore emulator)
+- **Docker:** 20.10+ (for container builds)
 - **RAM:** 8GB minimum (16GB recommended)
 - **Disk Space:** 5GB for repo + dependencies
 
@@ -100,10 +100,8 @@ cp .env.example .env.local
 nano .env.local  # or vim, or open in editor
 
 # Required values to set:
-#  - FIREBASE_PROJECT_ID (get from team lead)
 #  - OWNER_BOOTSTRAP_KEY or OWNER_BOOTSTRAP_KEY_FILE (for owner bootstrap in JWT mode)
-#  - FIRESTORE_EMULATOR_HOST (default local value: 127.0.0.1:8081)
-#  - GOOGLE_APPLICATION_CREDENTIALS (download service account key)
+#  - DATA_STORE_FILE (optional explicit API document-store path)
 
 # Verify file created
 test -f .env.local && echo "✅ .env.local created"
@@ -112,11 +110,7 @@ test -f .env.local && echo "✅ .env.local created"
 **Get secrets from team:**
 
 ```bash
-# If you have gcloud CLI configured:
-gcloud secrets versions access latest --secret="firebase-config" > firebase-config.json
-
 # Ask team lead to share (don't commit secrets!):
-# - Firebase service account key
 # - Database credentials
 # - API keys
 ```
@@ -144,42 +138,29 @@ npm run dev:portals
 
 ### Manual Service Setup (if above doesn't work)
 
-**Terminal 1: Firestore Emulator**
+**Terminal 1: Backend API**
 
 ```bash
 # Navigate to workspace
 cd ~/workspace/school-erp
 
-# Start the Firestore emulator when you need local Firestore integration testing
-npx firebase emulators:start --only firestore --project school-erp-dev
-
-# Expected output:
-# Firestore listening on localhost:8081
-# Firestore UI available at http://localhost:4000
-```
-
-**Terminal 2: Backend API**
-
-```bash
-cd ~/workspace/school-erp/apps/api
-
 # Install API dependencies (if not done)
 npm install
 
 # Set environment
-export FIRESTORE_EMULATOR_HOST=localhost:8081
 export NODE_ENV=development
 export PORT=3000
+export DATA_STORE_FILE=.data/api-store.json
 
 # Start API server
 npm run dev:portals
 
 # Expected output:
 # ✓ Server running on port 3000
-# ✓ Connected to Firestore emulator
+# ✓ Connected to local document store
 ```
 
-**Terminal 3: Portals**
+**Terminal 2: Portals**
 
 ```bash
 cd ~/workspace/school-erp
@@ -221,7 +202,7 @@ apps/
 ├── api/
 │   └── tests/
 │       ├── api.test.ts              (API endpoint tests)
-│       ├── firestore.test.ts        (Database tests)
+│       ├── document-store.test.ts   (Database tests)
 │       ├── security.test.ts         (Authorization tests)
 │       └── integration.test.ts      (End-to-end tests)
 │
@@ -415,7 +396,7 @@ The legacy GitHub staging and production deploy workflows are draft placeholders
 
 ### Error: "Cannot find module 'express'"
 
-**Cause:** Dependencies not installed  
+**Cause:** Dependencies not installed
 **Fix:**
 
 ```bash
@@ -433,7 +414,7 @@ npm install
 
 ### Error: "EADDRINUSE: address already in use :::3000"
 
-**Cause:** Port 3000 already in use (another instance running)  
+**Cause:** Port 3000 already in use (another instance running)
 **Fix:**
 
 ```bash
@@ -447,28 +428,28 @@ kill -9 <PID>
 PORT=3001 npm run dev:portals
 ```
 
-### Error: "Firestore emulator not connected"
+### Error: "API data store is unavailable"
 
-**Cause:** Emulator not running or FIRESTORE_EMULATOR_HOST not set  
+**Cause:** `DATA_STORE_FILE` points to a path the API cannot create or write
 **Fix:**
 
 ```bash
-# Ensure emulator running in separate terminal
-npx firebase emulators:start --only firestore --project school-erp-dev
+# Use a writable local data path
+mkdir -p .data
 
 # Set environment variable
-export FIRESTORE_EMULATOR_HOST=localhost:8081
+export DATA_STORE_FILE=.data/api-store.json
 
 # Verify it's set
-echo $FIRESTORE_EMULATOR_HOST  # Should print: localhost:8081
+echo $DATA_STORE_FILE  # Should print: .data/api-store.json
 
 # Restart API server
 npm run dev:portals
 ```
 
-### Error: "GOOGLE_APPLICATION_CREDENTIALS is missing"
+### Error: "OWNER_BOOTSTRAP_KEY is missing"
 
-**Cause:** .env.local not configured  
+**Cause:** .env.local not configured
 **Fix:**
 
 ```bash
@@ -479,9 +460,8 @@ cp .env.example .env.local
 nano .env.local
 
 # Add these lines:
-FIREBASE_PROJECT_ID=school-erp-prod
 OWNER_BOOTSTRAP_KEY_FILE=/absolute/path/to/owner-bootstrap.key
-GOOGLE_APPLICATION_CREDENTIALS=./firebase-key.json
+DATA_STORE_FILE=.data/api-store.json
 
 # Save and restart:
 npm run dev:portals
@@ -489,7 +469,7 @@ npm run dev:portals
 
 ### Error: "Tests failing with 'document.querySelector is not a function'"
 
-**Cause:** DOM not available in test environment  
+**Cause:** DOM not available in test environment
 **Fix:**
 
 ```bash
@@ -506,7 +486,7 @@ global.window = dom.window;
 
 ### Error: "401 Unauthorized when calling API"
 
-**Cause:** Auth token invalid or expired  
+**Cause:** Auth token invalid or expired
 **Fix:**
 
 ```bash
@@ -523,7 +503,7 @@ AUTH_MODE=dev npm run dev:portals
 
 ### Error: "npm ERR! code EACCES permission denied"
 
-**Cause:** npm installed globally without permissions  
+**Cause:** npm installed globally without permissions
 **Fix:**
 
 ```bash
@@ -548,7 +528,6 @@ nvm use 18
 |----------|-----|-----------------|
 | **GitHub** | https://github.com/school-erp | SSH key configured |
 | **Figma** | https://figma.com/school-erp | Request access from Product Agent |
-| **Firebase Console** | https://console.firebase.google.com | Google account + project access |
 | **Google Cloud Console** | https://console.cloud.google.com | gcloud CLI installed |
 | **Monitoring Dashboard** | [Link provided by DevOps] | Cloud access |
 | **Incident Tracking** | Slack #incidents | Slack workspace |
@@ -573,19 +552,6 @@ gcloud config set project school-erp-prod
 
 # Verify
 gcloud auth list
-```
-
-**Firebase CLI**
-
-```bash
-# Install globally
-npm install -g firebase-tools
-
-# Login
-firebase login
-
-# Verify
-firebase --version
 ```
 
 **Cloud Build Log Access**
@@ -693,9 +659,8 @@ gcloud builds submit --config cloudbuild.yaml --substitutions=_SERVICE_NAME=scho
 PROJECT_ID=your-gcp-project-id REGION=asia-south1 IMAGE_TAG=latest sh infrastructure/cloud-run/deploy-autoscaling.sh # Manual fallback
 
 # Database
-npx firebase emulators:start --only firestore --project school-erp-dev # Start Firestore emulator
 npm run db:seed            # Seed test data
-npm run db:backup          # Backup Firestore
+npm run db:backup          # Backup local data store
 
 # Utilities
 npm run clean              # Remove build artifacts
@@ -760,6 +725,5 @@ school-erp/                    (Monorepo root)
 
 **Still stuck? Slack [@backend-lead, @frontend-lead, @devops-lead] or open a GitHub issue with "🆘 Onboarding Help" in title.**
 
-**Last Updated:** May 9, 2026  
+**Last Updated:** May 9, 2026
 **Next Review:** May 23, 2026
-

@@ -17,7 +17,7 @@ import type { PlatformRole } from '@school-erp/shared';
 import { isPlatformRole, isTenantRole } from '@school-erp/shared';
 import { env } from '../../config/env.js';
 import { AppError } from '../../errors/app-error.js';
-import { getFirestoreDb } from '../../lib/firebase.js';
+import { getDocumentStore } from '../../lib/document-store.js';
 import { EmployeeRepository } from '../owner-plane/employees/employee.repository.js';
 import { SchoolRepository } from '../schools/school.repository.js';
 import { AuthRepository, OWNER_BOOTSTRAP_STATE_DOC_ID } from './auth.repository.js';
@@ -164,7 +164,7 @@ export class AuthService {
     const uid = crypto.randomUUID();
     const credentialId = this.createCredentialId('platform', email);
     const passwordHash = hashPassword(input.password);
-    const db = getFirestoreDb();
+    const db = getDocumentStore();
     const stateRef = db.collection('owner_bootstrap_state').doc(OWNER_BOOTSTRAP_STATE_DOC_ID);
     const sessionRef = db.collection('owner_bootstrap_sessions').doc(parsedSession.sessionId);
     const credentialsQuery = db

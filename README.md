@@ -41,7 +41,7 @@ Or start all three portals together:
 npm run dev:portals
 ```
 
-## Local auth and Firestore development
+## Local auth and document-store development
 
 Create a local env file from the example:
 
@@ -59,6 +59,7 @@ The repo-root `.env` is the canonical local env file for:
 The current default local path stays simple:
 
 - `AUTH_MODE=dev`
+- `DATA_STORE_FILE=` empty, which makes the API use `.data/api-store.json`
 
 When you want the API to enforce bearer tokens end to end, switch to:
 
@@ -67,27 +68,15 @@ When you want the API to enforce bearer tokens end to end, switch to:
   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS_FILE`, `SMTP_FROM_EMAIL`
   - or local file fallback in development, which writes OTP emails into `.tools/email-outbox`
 
-To run the Firestore emulator baseline:
-
-```bash
-npx firebase emulators:start --only firestore --project school-erp-dev
-```
-
-The current emulator ports are:
-
-- Firestore emulator: `127.0.0.1:8081`
-- Emulator UI: `127.0.0.1:4000`
-
-Firestore rules and indexes live in `firestore.rules` and `firestore.indexes.json`.
+The API stores local development data in a JSON document store. Override the path with `DATA_STORE_FILE=/absolute/path/to/api-store.json` when you need an explicit location.
 
 ## Owner account bootstrap
 
-For emulator-backed local owner setup, start the Firestore emulator first and then run the bootstrap CLI.
+For local owner setup, start the API and then run the bootstrap CLI.
 
-To create or rotate a JWT-backed owner account against a non-emulated environment, configure:
+To create or rotate a JWT-backed owner account, configure:
 
 - `AUTH_MODE=jwt`
-- `GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/service-account.json`
 - `OWNER_BOOTSTRAP_KEY` in the process environment, `OWNER_BOOTSTRAP_KEY_CREDENTIAL_TARGET` in Windows Credential Manager, or `OWNER_BOOTSTRAP_KEY_FILE=/absolute/path/to/owner-bootstrap.key`
 
 Then run:

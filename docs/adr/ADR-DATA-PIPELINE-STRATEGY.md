@@ -286,7 +286,7 @@ Verdict: APPROVED (best developer experience + data safety)
 │  ├─ POST /api/v1/exams/{id}/grade (Grade)                     │
 │  └─ GET /api/v1/exams/{id}/results (View Results)             │
 │          │                                                     │
-│          ├──► Firestore (Exam Data - Required)               │
+│          ├──► Persistent document store (Exam Data - Required)│
 │          │                                                     │
 │          ├──► [Optional] Pub/Sub: exam-submissions-topic      │
 │          │         │                                          │
@@ -308,7 +308,7 @@ Verdict: APPROVED (best developer experience + data safety)
 ### Startup Sequence
 
 ```
-1. Initialize required services (Firestore, Express)
+1. Initialize required services (document store, Express)
    ✅ Blocking - API won't start without these
 
 2. Initialize optional services (Pub/Sub, BigQuery, Cloud Logging)

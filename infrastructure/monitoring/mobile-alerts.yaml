@@ -12,7 +12,7 @@ alert_policies:
         
         **Action:**
         1. Check recent deployments in TestFlight/Play Store
-        2. Review crash logs in Firebase Crashlytics
+        2. Review mobile crash logs
         3. Rollback recent deployment if necessary
     conditions:
       - condition_threshold:

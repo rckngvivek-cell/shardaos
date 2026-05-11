@@ -11,7 +11,7 @@ This file distills the large automation plan into what exists now versus what sh
 
 ## Manual for now
 
-- Firestore to BigQuery sync
+- operational data export to analytics warehouse
 - scheduled backups to Cloud Storage
 - payment gateway sync
 - SMS and email notification queues
@@ -20,7 +20,7 @@ This file distills the large automation plan into what exists now versus what sh
 
 ## Next automation milestones
 
-1. Add Firestore emulator-backed repository and fixture seeding.
+1. Add document-store fixture seeding.
 2. Add JWT session enforcement in non-dev environments and retire local bypasses where fixtures exist.
 3. Add scheduled backup workflow and restore drill checklist.
 4. Add queue-backed notification service for attendance and billing.

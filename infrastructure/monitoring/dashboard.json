@@ -127,13 +127,13 @@
         "width": 12,
         "height": 4,
         "widget": {
-          "title": "Firestore Read/Write Latency (ms)",
+          "title": "Persistent Store Read/Write Latency (ms)",
           "xyChart": {
             "dataSets": [
               {
                 "timeSeriesQuery": {
                   "timeSeriesFilter": {
-                    "filter": "metric.type=\"firestore.googleapis.com/instance/firestore_latencies\" AND resource.type=\"firestore_instance\"",
+                    "filter": "metric.type=\"logging.googleapis.com/user/persistent_store_latency_ms\" AND resource.type=\"cloud_run_revision\"",
                     "aggregation": {
                       "alignmentPeriod": "60s",
                       "perSeriesAligner": "ALIGN_PERCENTILE_95",

@@ -7,6 +7,7 @@ import { studentRoutes } from './modules/students/student.routes.js';
 import { attendanceRoutes } from './modules/attendance/attendance.routes.js';
 import { gradesRoutes } from './modules/grades/grades.routes.js';
 import { schoolRoutes } from './modules/schools/school.routes.js';
+import { admissionRoutes } from './modules/admissions/admission.routes.js';
 import { ownerPlaneRoutes } from './modules/owner-plane/owner-plane.routes.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { ipWhitelist, ownerAuthMiddleware, auditLogger } from './middleware/owner-plane/index.js';
@@ -32,6 +33,7 @@ export function createApp() {
   app.use('/api/attendance', authMiddleware, attendanceRoutes);
   app.use('/api/grades', authMiddleware, gradesRoutes);
   app.use('/api/schools', authMiddleware, schoolRoutes);
+  app.use('/api/admissions', authMiddleware, admissionRoutes);
 
   // Owner plane (owner / employee)
   app.use('/api/owner', ipWhitelist, ownerAuthMiddleware, auditLogger, ownerPlaneRoutes);

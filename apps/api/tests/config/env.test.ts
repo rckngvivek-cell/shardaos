@@ -43,7 +43,7 @@ describe('env file loading', () => {
     try {
       fs.writeFileSync(path.join(rootDir, '.env'), 'AUTH_MODE=dev\nOWNER_BOOTSTRAP_KEY=root-key\n');
       fs.writeFileSync(path.join(rootDir, '.env.local'), 'OWNER_BOOTSTRAP_KEY=root-local-key\n');
-      fs.writeFileSync(path.join(apiDir, '.env.local'), 'AUTH_MODE=jwt\nFIREBASE_PROJECT_ID=workspace-project\n');
+      fs.writeFileSync(path.join(apiDir, '.env.local'), 'AUTH_MODE=jwt\nDATA_STORE_FILE=workspace-store.json\n');
 
       const loadedFiles = applyEnvironmentFiles(apiDir, targetEnv, new Set());
 
@@ -54,7 +54,7 @@ describe('env file loading', () => {
       ]);
       expect(targetEnv.AUTH_MODE).toBe('jwt');
       expect(targetEnv.OWNER_BOOTSTRAP_KEY).toBeUndefined();
-      expect(targetEnv.FIREBASE_PROJECT_ID).toBe('workspace-project');
+      expect(targetEnv.DATA_STORE_FILE).toBe('workspace-store.json');
     } finally {
       fs.rmSync(rootDir, { recursive: true, force: true });
     }

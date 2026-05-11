@@ -33,7 +33,6 @@ resource "google_project_service" "required_apis" {
   for_each = toset([
     "compute.googleapis.com",
     "run.googleapis.com",
-    "firestore.googleapis.com",
     "monitoring.googleapis.com",
     "logging.googleapis.com",
     "cloudarmor.googleapis.com",
@@ -102,16 +101,6 @@ resource "google_kms_key_ring" "deerflow" {
   depends_on = [google_project_service.required_apis["cloudkms.googleapis.com"]]
 }
 
-# KMS Encryption Key for Firestore
-resource "google_kms_crypto_key" "firestore" {
-  name            = "${local.app_name}-firestore-key"
-  key_ring        = google_kms_key_ring.deerflow.id
-  rotation_period = "7776000s" # 90 days
-  labels          = local.common_labels
-
-  depends_on = [google_project_service.required_apis["cloudkms.googleapis.com"]]
-}
-
 # KMS Key for Cloud SQL
 resource "google_kms_crypto_key" "cloudsql" {
   name            = "${local.app_name}-cloudsql-key"
@@ -134,10 +123,6 @@ resource "google_kms_crypto_key" "gcs" {
 
 output "kms_keyring_name" {
   value = google_kms_key_ring.deerflow.name
-}
-
-output "firestore_key_name" {
-  value = google_kms_crypto_key.firestore.name
 }
 
 output "cloudsql_key_name" {

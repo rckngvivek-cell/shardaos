@@ -3,7 +3,7 @@ import request from 'supertest';
 const mockGetSessionFromAccessToken = jest.fn();
 const mockGetAccessTokenPayload = jest.fn();
 const mockAuditCollectionAdd = jest.fn();
-const mockFirestoreDb = {
+const mockDocumentStore = {
   collection: jest.fn(() => ({
     add: mockAuditCollectionAdd,
   })),
@@ -23,8 +23,8 @@ jest.mock('../../../src/modules/auth/auth.service.js', () => ({
   })),
 }));
 
-jest.mock('../../../src/lib/firebase.js', () => ({
-  getFirestoreDb: () => mockFirestoreDb,
+jest.mock('../../../src/lib/document-store.js', () => ({
+  getDocumentStore: () => mockDocumentStore,
 }));
 
 jest.mock('../../../src/modules/owner-plane/employees/employee.service.js', () => ({

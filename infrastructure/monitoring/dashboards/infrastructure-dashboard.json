@@ -83,13 +83,13 @@
         "width": 6,
         "height": 4,
         "widget": {
-          "title": "Database Connections (Firestore)",
+          "title": "Database Connections (Persistent Store)",
           "xyChart": {
             "dataSets": [
               {
                 "timeSeriesQuery": {
                   "timeSeriesFilter": {
-                    "filter": "metric.type=\"firestore.googleapis.com/database/network_output_bytes_by_region\" resource.type=\"cloud_firestore_database\"",
+                    "filter": "metric.type=\"logging.googleapis.com/user/persistent_store_network_output_bytes\" resource.type=\"cloud_run_revision\"",
                     "aggregation": {
                       "alignmentPeriod": "60s",
                       "perSeriesAligner": "ALIGN_RATE"
@@ -119,7 +119,7 @@
               {
                 "timeSeriesQuery": {
                   "timeSeriesFilter": {
-                    "filter": "metric.type=\"firestore.googleapis.com/database/total_billable_documents_by_region\" resource.type=\"cloud_firestore_database\"",
+                    "filter": "metric.type=\"logging.googleapis.com/user/persistent_store_document_count\" resource.type=\"cloud_run_revision\"",
                     "aggregation": {
                       "alignmentPeriod": "86400s",
                       "perSeriesAligner": "ALIGN_MAX"

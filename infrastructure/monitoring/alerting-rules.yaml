@@ -83,15 +83,14 @@ alertPolicies:
         period: "600s"
 
 ---
-# Alert Policy 4: High Firestore Latency (Bonus)
-  - displayName: "PRD-ALERT-004: Firestore High Latency > 250ms (READ)"
+# Alert Policy 4: High Persistent Store Read Latency
+  - displayName: "PRD-ALERT-004: Persistent Store Read Latency > 250ms"
     conditions:
-      - displayName: "Firestore Read Latency Exceeds 250ms"
+      - displayName: "Persistent store read latency exceeds 250ms"
         conditionThreshold:
           filter: |
-            metric.type="firestore.googleapis.com/instance/firestore_latencies"
-            AND resource.type="firestore_instance"
-            AND metric.label.operation_type="Read"
+            metric.type="logging.googleapis.com/user/persistent_store_read_latency_ms"
+            AND resource.type="cloud_run_revision"
           aggregations:
             - alignmentPeriod: "60s"
               perSeriesAligner: "ALIGN_PERCENTILE_95"
@@ -109,15 +108,14 @@ alertPolicies:
         period: "300s"
 
 ---
-# Alert Policy 5: High Firestore Write Latency (Bonus)
-  - displayName: "PRD-ALERT-005: Firestore High Latency > 300ms (WRITE)"
+# Alert Policy 5: High Persistent Store Write Latency
+  - displayName: "PRD-ALERT-005: Persistent Store Write Latency > 300ms"
     conditions:
-      - displayName: "Firestore Write Latency Exceeds 300ms"
+      - displayName: "Persistent store write latency exceeds 300ms"
         conditionThreshold:
           filter: |
-            metric.type="firestore.googleapis.com/instance/firestore_latencies"
-            AND resource.type="firestore_instance"
-            AND metric.label.operation_type="Write"
+            metric.type="logging.googleapis.com/user/persistent_store_write_latency_ms"
+            AND resource.type="cloud_run_revision"
           aggregations:
             - alignmentPeriod: "60s"
               perSeriesAligner: "ALIGN_PERCENTILE_95"

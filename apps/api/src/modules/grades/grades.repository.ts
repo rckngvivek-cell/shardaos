@@ -1,10 +1,10 @@
 import type { Grade, CreateGradeInput } from '@school-erp/shared';
-import { getFirestoreDb } from '../../lib/firebase.js';
+import { getDocumentStore, type DocumentQuery } from '../../lib/document-store.js';
 
 const COLLECTION = 'grades';
 
 function schoolGradesRef(schoolId: string) {
-  return getFirestoreDb().collection('schools').doc(schoolId).collection(COLLECTION);
+  return getDocumentStore().collection('schools').doc(schoolId).collection(COLLECTION);
 }
 
 export class GradesRepository {
@@ -26,7 +26,7 @@ export class GradesRepository {
     schoolId: string,
     opts: { subject?: string; examName?: string; page: number; limit: number }
   ): Promise<{ grades: Grade[]; total: number }> {
-    let query: FirebaseFirestore.Query = schoolGradesRef(schoolId);
+    let query: DocumentQuery = schoolGradesRef(schoolId);
 
     if (opts.subject) query = query.where('subject', '==', opts.subject);
     if (opts.examName) query = query.where('examName', '==', opts.examName);

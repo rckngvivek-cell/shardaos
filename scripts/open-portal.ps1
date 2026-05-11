@@ -7,12 +7,8 @@ param(
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $toolsDir = Join-Path $repoRoot '.tools'
 $apiHealthUrl = 'http://127.0.0.1:3000/api/health'
-$firestoreEmulatorHost = '127.0.0.1'
-$firestoreEmulatorPort = 8081
 $apiStdoutLog = Join-Path $toolsDir 'portal-api.log'
 $apiStderrLog = Join-Path $toolsDir 'portal-api.err.log'
-$emulatorStdoutLog = Join-Path $toolsDir 'firebase-emulators.log'
-$emulatorStderrLog = Join-Path $toolsDir 'firebase-emulators.err.log'
 $seedStdoutLog = Join-Path $toolsDir 'owner-seed.log'
 $seedStderrLog = Join-Path $toolsDir 'owner-seed.err.log'
 
@@ -37,45 +33,6 @@ $portalConfig = @{
   }
 }
 
-function Resolve-JavaHome {
-  if ($env:JAVA_HOME -and (Test-Path (Join-Path $env:JAVA_HOME 'bin\java.exe'))) {
-    return $env:JAVA_HOME
-  }
-
-  $adoptiumRoot = 'C:\Program Files\Eclipse Adoptium'
-  if (Test-Path $adoptiumRoot) {
-    $latest = Get-ChildItem -Path $adoptiumRoot -Directory |
-      Sort-Object Name -Descending |
-      Select-Object -First 1
-
-    if ($latest -and (Test-Path (Join-Path $latest.FullName 'bin\java.exe'))) {
-      return $latest.FullName
-    }
-  }
-
-  return $null
-}
-
-function Ensure-JavaInPath {
-  if (Get-Command java -ErrorAction SilentlyContinue) {
-    return $true
-  }
-
-  $javaHome = Resolve-JavaHome
-  if (-not $javaHome) {
-    return $false
-  }
-
-  $env:JAVA_HOME = $javaHome
-  $javaBin = Join-Path $javaHome 'bin'
-
-  if (-not $env:Path.Split(';').Contains($javaBin)) {
-    $env:Path = "$javaBin;$env:Path"
-  }
-
-  return [bool](Get-Command java -ErrorAction SilentlyContinue)
-}
-
 function Test-HttpEndpoint([string]$url) {
   try {
     $response = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 2
@@ -85,37 +42,12 @@ function Test-HttpEndpoint([string]$url) {
   }
 }
 
-function Test-TcpPort([string]$targetHost, [int]$port) {
-  $client = New-Object System.Net.Sockets.TcpClient
-
-  try {
-    $asyncResult = $client.BeginConnect($targetHost, $port, $null, $null)
-
-    if (-not $asyncResult.AsyncWaitHandle.WaitOne(1500, $false)) {
-      return $false
-    }
-
-    $client.EndConnect($asyncResult)
-    return $true
-  } catch {
-    return $false
-  } finally {
-    $client.Close()
-  }
-}
-
 function Start-BackgroundCommand(
   [string]$command,
   [string]$stdoutLog,
   [string]$stderrLog
 ) {
   $bootstrapCommand = "Set-Location -LiteralPath '$repoRoot'; "
-  if (Ensure-JavaInPath) {
-    $escapedJavaHome = $env:JAVA_HOME -replace "'", "''"
-    $escapedPath = $env:Path -replace "'", "''"
-    $bootstrapCommand += "`$env:JAVA_HOME='$escapedJavaHome'; "
-    $bootstrapCommand += "`$env:Path='$escapedPath'; "
-  }
 
   Start-Process `
     -FilePath 'powershell.exe' `
@@ -141,39 +73,6 @@ function Wait-ForCondition(
   throw $failureMessage
 }
 
-function Ensure-Emulators {
-  $firestoreReady = Test-TcpPort -targetHost $firestoreEmulatorHost -port $firestoreEmulatorPort
-
-  if ($firestoreReady) {
-    return $true
-  }
-
-  if (-not (Ensure-JavaInPath)) {
-    Write-Warning 'Java is not installed, so the Firestore emulator was skipped. The owner app will use local dev fallback mode.'
-    return $false
-  }
-
-  $firebaseCli = if (Get-Command firebase -ErrorAction SilentlyContinue) {
-    'firebase'
-  } else {
-    'npx firebase'
-  }
-
-  $command = "Set-Location -LiteralPath '$repoRoot'; $firebaseCli emulators:start --only firestore --project school-erp-dev"
-  Start-BackgroundCommand -command $command -stdoutLog $emulatorStdoutLog -stderrLog $emulatorStderrLog
-
-  try {
-    Wait-ForCondition `
-      -condition { Test-TcpPort -targetHost $firestoreEmulatorHost -port $firestoreEmulatorPort } `
-      -timeoutSeconds 90 `
-      -failureMessage "Firestore emulator did not start within 90 seconds. Check $emulatorStdoutLog and $emulatorStderrLog."
-    return $true
-  } catch {
-    Write-Warning $_.Exception.Message
-    return $false
-  }
-}
-
 function Ensure-Api {
   if (Test-HttpEndpoint $apiHealthUrl) {
     return $true
@@ -195,10 +94,6 @@ function Ensure-Api {
 }
 
 function Ensure-OwnerSeed {
-  if (-not (Test-TcpPort -targetHost $firestoreEmulatorHost -port $firestoreEmulatorPort)) {
-    return $false
-  }
-
   try {
     & powershell.exe `
       -NoProfile `
@@ -213,7 +108,7 @@ function Ensure-OwnerSeed {
 
     return $true
   } catch {
-    Write-Warning "Owner emulator data seed failed. Check $seedStdoutLog and $seedStderrLog."
+    Write-Warning "Owner local data seed failed. Check $seedStdoutLog and $seedStderrLog."
     return $false
   }
 }
@@ -258,7 +153,6 @@ if (-not (Test-Path $toolsDir)) {
 $normalizedRoute = Normalize-Route $Route
 
 if ($App -eq 'all') {
-  $null = Ensure-Emulators
   $null = Ensure-Api
   $null = Ensure-OwnerSeed
 
@@ -276,7 +170,6 @@ if ($App -eq 'all') {
 $null = Ensure-Api
 
 if ($App -eq 'owner') {
-  $null = Ensure-Emulators
   $null = Ensure-OwnerSeed
 }
 

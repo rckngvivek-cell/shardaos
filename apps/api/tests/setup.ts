@@ -4,8 +4,11 @@
  */
 process.env.NODE_ENV = 'test';
 process.env.AUTH_MODE = 'jwt';
-process.env.FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'school-erp-test';
 
 afterEach(() => {
   jest.restoreAllMocks();
+  const { resetDocumentStoreForTests } = jest.requireActual(
+    '../src/lib/document-store.js',
+  ) as typeof import('../src/lib/document-store.js');
+  resetDocumentStoreForTests();
 });

@@ -1,11 +1,11 @@
 import type { AuditLog } from '@school-erp/shared';
-import { getFirestoreDb } from '../../../lib/firebase.js';
+import { getDocumentStore } from '../../../lib/document-store.js';
 
 const COLLECTION = 'platform_audit_log';
 
 export class AuditLogRepository {
   private get col() {
-    return getFirestoreDb().collection(COLLECTION);
+    return getDocumentStore().collection(COLLECTION);
   }
 
   async listRecent(limit = 40): Promise<AuditLog[]> {

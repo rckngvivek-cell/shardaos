@@ -1,5 +1,5 @@
 import type { AuthPlane, UserRole } from '@school-erp/shared';
-import { getFirestoreDb } from '../../lib/firebase.js';
+import { getDocumentStore, type DocumentSnapshot } from '../../lib/document-store.js';
 import type {
   StoredAuthCredential,
   StoredAuthOtpChallenge,
@@ -17,27 +17,27 @@ export const OWNER_BOOTSTRAP_STATE_DOC_ID = 'primary';
 
 export class AuthRepository {
   private get credentials() {
-    return getFirestoreDb().collection(CREDENTIAL_COLLECTION);
+    return getDocumentStore().collection(CREDENTIAL_COLLECTION);
   }
 
   private get sessions() {
-    return getFirestoreDb().collection(SESSION_COLLECTION);
+    return getDocumentStore().collection(SESSION_COLLECTION);
   }
 
   private get otpChallenges() {
-    return getFirestoreDb().collection(OTP_CHALLENGE_COLLECTION);
+    return getDocumentStore().collection(OTP_CHALLENGE_COLLECTION);
   }
 
   private get ownerBootstrapState() {
-    return getFirestoreDb().collection(OWNER_BOOTSTRAP_STATE_COLLECTION);
+    return getDocumentStore().collection(OWNER_BOOTSTRAP_STATE_COLLECTION);
   }
 
   private get ownerBootstrapSessions() {
-    return getFirestoreDb().collection(OWNER_BOOTSTRAP_SESSION_COLLECTION);
+    return getDocumentStore().collection(OWNER_BOOTSTRAP_SESSION_COLLECTION);
   }
 
   async findCredentialByEmail(email: string, plane?: AuthPlane): Promise<StoredAuthCredential | null> {
-    let query: FirebaseFirestore.Query = this.credentials.where('emailNormalized', '==', email.trim().toLowerCase()).limit(2);
+    let query = this.credentials.where('emailNormalized', '==', email.trim().toLowerCase()).limit(2);
 
     if (plane) {
       query = query.where('plane', '==', plane);
@@ -52,7 +52,7 @@ export class AuthRepository {
   }
 
   async findCredentialByUid(uid: string, plane?: AuthPlane): Promise<StoredAuthCredential | null> {
-    let query: FirebaseFirestore.Query = this.credentials.where('uid', '==', uid).limit(2);
+    let query = this.credentials.where('uid', '==', uid).limit(2);
 
     if (plane) {
       query = query.where('plane', '==', plane);
@@ -134,7 +134,7 @@ export class AuthRepository {
       return;
     }
 
-    const batch = getFirestoreDb().batch();
+    const batch = getDocumentStore().batch();
     const revokedAt = new Date().toISOString();
     snap.docs.forEach((doc) => {
       batch.set(
@@ -208,7 +208,7 @@ export class AuthRepository {
       return;
     }
 
-    const batch = getFirestoreDb().batch();
+    const batch = getDocumentStore().batch();
     const revokedAt = new Date().toISOString();
     snap.docs.forEach((doc) => {
       batch.set(
@@ -223,33 +223,23 @@ export class AuthRepository {
     await batch.commit();
   }
 
-  private toCredential(
-    doc: FirebaseFirestore.QueryDocumentSnapshot | FirebaseFirestore.DocumentSnapshot,
-  ): StoredAuthCredential {
+  private toCredential(doc: DocumentSnapshot): StoredAuthCredential {
     return { id: doc.id, ...(doc.data() as Omit<StoredAuthCredential, 'id'>) };
   }
 
-  private toSession(
-    doc: FirebaseFirestore.QueryDocumentSnapshot | FirebaseFirestore.DocumentSnapshot,
-  ): StoredAuthSession {
+  private toSession(doc: DocumentSnapshot): StoredAuthSession {
     return { id: doc.id, ...(doc.data() as Omit<StoredAuthSession, 'id'>) };
   }
 
-  private toOwnerBootstrapState(
-    doc: FirebaseFirestore.QueryDocumentSnapshot | FirebaseFirestore.DocumentSnapshot,
-  ): StoredOwnerBootstrapState {
+  private toOwnerBootstrapState(doc: DocumentSnapshot): StoredOwnerBootstrapState {
     return { id: doc.id, ...(doc.data() as Omit<StoredOwnerBootstrapState, 'id'>) };
   }
 
-  private toOtpChallenge(
-    doc: FirebaseFirestore.QueryDocumentSnapshot | FirebaseFirestore.DocumentSnapshot,
-  ): StoredAuthOtpChallenge {
+  private toOtpChallenge(doc: DocumentSnapshot): StoredAuthOtpChallenge {
     return { id: doc.id, ...(doc.data() as Omit<StoredAuthOtpChallenge, 'id'>) };
   }
 
-  private toOwnerBootstrapSession(
-    doc: FirebaseFirestore.QueryDocumentSnapshot | FirebaseFirestore.DocumentSnapshot,
-  ): StoredOwnerBootstrapSession {
+  private toOwnerBootstrapSession(doc: DocumentSnapshot): StoredOwnerBootstrapSession {
     return { id: doc.id, ...(doc.data() as Omit<StoredOwnerBootstrapSession, 'id'>) };
   }
 }

@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { CreateStudentInput, UpdateStudentInput } from '@school-erp/shared';
+import type { CreateStudentInput, StudentAdmissionSourceType, UpdateStudentInput } from '@school-erp/shared';
 import { StudentService } from './student.service.js';
 import { successResponse, paginatedResponse } from '../../lib/api-response.js';
 
@@ -12,8 +12,12 @@ export async function listStudents(req: Request, res: Response, next: NextFuncti
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const grade = req.query.grade as string | undefined;
     const section = req.query.section as string | undefined;
+    const rawSource = req.query.source;
+    const source: StudentAdmissionSourceType | undefined = (
+      rawSource === 'direct' || rawSource === 'admission_crm'
+    ) ? rawSource : undefined;
 
-    const { students, total } = await service.list(schoolId, { page, limit, grade, section });
+    const { students, total } = await service.list(schoolId, { page, limit, grade, section, source });
     res.json(paginatedResponse(students, total, page, limit, req.requestId));
   } catch (err) {
     next(err);
